@@ -6,8 +6,8 @@ import type { Database } from "@/types/database";
 export type CatalogClient = SupabaseClient<Database>;
 
 async function defaultClient(): Promise<CatalogClient> {
-  const { createClient } = await import("@/lib/supabase/server");
-  return createClient();
+  const { createAnonClient } = await import("@/lib/supabase/anon");
+  return createAnonClient();
 }
 
 export async function listActiveSpecialties(

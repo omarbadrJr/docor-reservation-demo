@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { DoctorCard } from "@/components/doctors/doctor-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/state";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { parseSpecialtyId } from "@/lib/validations/catalog";
 import { listDoctorsBySpecialty } from "@/services/doctors";
 import { getActiveSpecialty } from "@/services/specialties";
@@ -20,7 +20,7 @@ export default async function DoctorsPage({
     redirect("/specialties");
   }
 
-  const client = await createClient();
+  const client = createAnonClient();
   const specialty = await getActiveSpecialty(client, specialtyId);
   if (!specialty) {
     redirect("/specialties");

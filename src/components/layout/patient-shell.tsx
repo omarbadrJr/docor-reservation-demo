@@ -6,7 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { NavLink } from "@/components/ui/nav-link";
 import { cn } from "@/lib/utils";
 
-const navLinkClassName = "rounded-md";
+const navLinkClassName = "min-h-11 rounded-md";
 const navActiveClassName = "bg-white/10 text-background";
 const navInactiveClassName =
   "text-background/70 hover:bg-white/10 hover:text-background";

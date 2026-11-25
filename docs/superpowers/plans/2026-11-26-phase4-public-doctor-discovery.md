@@ -58,60 +58,60 @@
   - `listDoctorsBySpecialty(client, specialty)`, `getPublicDoctorById(client, id)`
   - `parseSpecialtyId(value): string | null`
 
-- [ ] **Step 1: Add the test runner**
+- [x] **Step 1: Add the test runner**
 
   Install `tsx` as a dev dependency. Add `"test": "tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\""` to `package.json`. Document the exact command in `AGENTS.md` under Commands.
 
-- [ ] **Step 2: Write failing validation tests**
+- [x] **Step 2: Write failing validation tests**
 
   Create `src/lib/validations/catalog.test.ts` asserting that a UUID string is returned, a non-UUID string returns `null`, and an array of values returns `null`.
 
-- [ ] **Step 3: Run the validation test and verify it fails**
+- [x] **Step 3: Run the validation test and verify it fails**
 
   Run: `npm test -- src/lib/validations/catalog.test.ts`
   Expected: FAIL because `src/lib/validations/catalog.ts` does not exist.
 
-- [ ] **Step 4: Implement validation and catalog DTO types**
+- [x] **Step 4: Implement validation and catalog DTO types**
 
   Create `src/lib/validations/catalog.ts` using Zod UUID validation and `src/types/catalog.ts` with the exact DTOs in Interfaces.
 
-- [ ] **Step 5: Run the validation test and verify it passes**
+- [x] **Step 5: Run the validation test and verify it passes**
 
   Run: `npm test -- src/lib/validations/catalog.test.ts`
   Expected: PASS.
 
-- [ ] **Step 6: Write failing service tests**
+- [x] **Step 6: Write failing service tests**
 
   Create `src/services/catalog.test.ts` with a fake Supabase query builder that applies `eq`/`in` filters and supports `order`/`maybeSingle`. Assert:
   - `listDoctorsBySpecialty` returns only doctors at active clinics and maps hand-checked fields.
   - `getPublicDoctorById` returns `null` for an active doctor whose clinic is inactive.
   - `getPublicDoctorById` returns `null` for a missing doctor.
 
-- [ ] **Step 7: Run the service test and verify it fails**
+- [x] **Step 7: Run the service test and verify it fails**
 
   Run: `npm test -- src/services/catalog.test.ts`
   Expected: FAIL because service modules do not exist.
 
-- [ ] **Step 8: Implement catalog services**
+- [x] **Step 8: Implement catalog services**
 
   Implement the exact signatures in Interfaces. Query only active specialties/clinics/doctors and active weekly schedules. Throw on Supabase errors with a clear Arabic message.
 
-- [ ] **Step 9: Run the service test and verify it passes**
+- [x] **Step 9: Run the service test and verify it passes**
 
   Run: `npm test -- src/services/catalog.test.ts`
   Expected: PASS.
 
-- [ ] **Step 10: Implement public Route Handlers**
+- [x] **Step 10: Implement public Route Handlers**
 
   - `GET /api/specialties` returns `{ specialties }`.
   - `GET /api/doctors?specialtyId=...` returns `{ doctors }`; invalid/missing id returns 400 with Arabic message; unknown active specialty returns 404.
   - `GET /api/doctors/:id` returns `{ doctor }` or 404 Arabic message.
 
-- [ ] **Step 11: Verify APIs against the local dev server**
+- [x] **Step 11: Verify APIs against the local dev server**
 
   Start `npm run dev` and curl the three endpoints plus an invalid `specialtyId`. Expected: 200 for seeded active data, 400 for malformed input, 404 for unknown ids.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
   `git add` only the files in this task and commit with `feat(api): add public catalog services and routes`.
 
@@ -134,56 +134,56 @@
 - Consumes: `SpecialtySummary` from Task 1, `listActiveSpecialties`.
 - Produces: `formatConsultationFee(value: string): string`, `formatExperienceYears(years: number | null): string | null`, `formatWorkingSchedule(rows)` returning Arabic day labels, `SpecialtyCard`, `DoctorPhoto`.
 
-- [ ] **Step 1: Write failing format and schedule tests**
+- [x] **Step 1: Write failing format and schedule tests**
 
   Assert `formatConsultationFee("150.00") === "150 جنيه"`, `formatExperienceYears(null) === null`, and day `0` maps to `الأحد` while day `5` maps to `الجمعة`.
 
-- [ ] **Step 2: Run them and verify they fail**
+- [x] **Step 2: Run them and verify they fail**
 
   Run: `npm test -- src/lib/format.test.ts src/lib/schedule.test.ts`
   Expected: FAIL because modules do not exist.
 
-- [ ] **Step 3: Implement format and schedule helpers**
+- [x] **Step 3: Implement format and schedule helpers**
 
   Use `Intl.NumberFormat("en-US", { maximumFractionDigits: 2 })` and a fixed Arabic weekday array.
 
-- [ ] **Step 4: Run them and verify they pass**
+- [x] **Step 4: Run them and verify they pass**
 
   Run: `npm test -- src/lib/format.test.ts src/lib/schedule.test.ts`
   Expected: PASS.
 
-- [ ] **Step 5: Write a failing specialty card test**
+- [x] **Step 5: Write a failing specialty card test**
 
   Render `SpecialtyCard` with `renderToStaticMarkup` and assert the link href contains the exact specialty id and the name/description appear.
 
-- [ ] **Step 6: Run it and verify it fails**
+- [x] **Step 6: Run it and verify it fails**
 
   Run: `npm test -- src/components/doctors/specialty-card.test.tsx`
   Expected: FAIL because the component does not exist.
 
-- [ ] **Step 7: Implement `SpecialtyCard` and `DoctorPhoto`**
+- [x] **Step 7: Implement `SpecialtyCard` and `DoctorPhoto`**
 
   Use Link cards with a Lucide icon mapped by specialty name and a Stethoscope fallback. `DoctorPhoto` renders a bordered fallback silhouette when `photoUrl` is null; otherwise use `next/image` with `fill`, `unoptimized`, and `object-cover`.
 
-- [ ] **Step 8: Run the card test and verify it passes**
+- [x] **Step 8: Run the card test and verify it passes**
 
   Run: `npm test -- src/components/doctors/specialty-card.test.tsx`
   Expected: PASS.
 
-- [ ] **Step 9: Add fictional demo portrait and bios**
+- [x] **Step 9: Add fictional demo portrait and bios**
 
   Create one clearly fictional local SVG portrait and point every seeded doctor's `photo_url` to it. Add a short, different fictional `bio` to each seeded doctor so cards and profiles have all required fields without external image dependencies.
 
-- [ ] **Step 10: Replace the specialties placeholder page**
+- [x] **Step 10: Replace the specialties placeholder page**
 
   Render `PageHeader` with `اختار التخصص`, map active specialties to `SpecialtyCard`, and use `EmptyState` with an Arabic explanation when none exist. Add `loading.tsx` and `error.tsx` using existing state components.
 
-- [ ] **Step 11: Verify the rendered page**
+- [x] **Step 11: Verify the rendered page**
 
   Run: `curl -s http://localhost:3000/specialties | grep -F 'اختار التخصص'`
   Expected: the canonical heading is present.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
   Commit with `feat(patient): build specialty selection page`.
 
@@ -201,33 +201,33 @@
 - Consumes: `DoctorCardData`, `getActiveSpecialty`, `listDoctorsBySpecialty`, `parseSpecialtyId`, `DoctorPhoto`, `formatConsultationFee`.
 - Produces: `DoctorCard` and `/doctors?specialtyId=<uuid>` page.
 
-- [ ] **Step 1: Write a failing doctor card test**
+- [x] **Step 1: Write a failing doctor card test**
 
   Render `DoctorCard` with a fixture containing a `null` bio and assert the doctor name, specialty, clinic name, clinic address, `150 جنيه`, the fallback bio text, and a link to `/doctors/<id>`.
 
-- [ ] **Step 2: Run it and verify it fails**
+- [x] **Step 2: Run it and verify it fails**
 
   Run: `npm test -- src/components/doctors/doctor-card.test.tsx`
   Expected: FAIL because the component does not exist.
 
-- [ ] **Step 3: Implement `DoctorCard`**
+- [x] **Step 3: Implement `DoctorCard`**
 
   Use the slip-like flat card pattern from `DESIGN.md`, with `DoctorPhoto`, plain text rows, fee, and a link to the profile.
 
-- [ ] **Step 4: Run it and verify it passes**
+- [x] **Step 4: Run it and verify it passes**
 
   Run: `npm test -- src/components/doctors/doctor-card.test.tsx`
   Expected: PASS.
 
-- [ ] **Step 5: Implement the doctors page**
+- [x] **Step 5: Implement the doctors page**
 
   Await `searchParams`, parse `specialtyId`, redirect to `/specialties` when missing/invalid/unknown, then render `PageHeader` with the specialty name and a responsive list of `DoctorCard`. Use `EmptyState` when no active doctors exist.
 
-- [ ] **Step 6: Verify listing and inactive filtering**
+- [x] **Step 6: Verify listing and inactive filtering**
 
   Curl a known seeded specialty id and confirm at least one active doctor appears; curl `/doctors?specialtyId=not-a-uuid` and confirm redirect to `/specialties`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
   Commit with `feat(patient): list doctors by specialty`.
 
@@ -246,37 +246,37 @@
 - Consumes: `DoctorProfileData`, `getPublicDoctorById`, `DoctorPhoto`, `formatConsultationFee`, `formatExperienceYears`, `formatWorkingSchedule`.
 - Produces: `DoctorProfile` and `/doctors/[id]` page.
 
-- [ ] **Step 1: Write a failing profile component test**
+- [x] **Step 1: Write a failing profile component test**
 
   Render `DoctorProfile` with a fixture and assert full name, specialty, qualifications, experience, clinic name/address, fee, `الأحد` schedule label, and an available-slots link to `/booking?doctorId=<id>` with `المواعيد المتاحة`.
 
-- [ ] **Step 2: Run it and verify it fails**
+- [x] **Step 2: Run it and verify it fails**
 
   Run: `npm test -- src/components/doctors/doctor-profile.test.tsx`
   Expected: FAIL because the component does not exist.
 
-- [ ] **Step 3: Implement `DoctorProfile`**
+- [x] **Step 3: Implement `DoctorProfile`**
 
   Use the slip pattern: identity row with photo, printed detail rows, qualifications/experience when present, clinic block with `عنوان العيادة`, working schedule summary, and one primary action link.
 
-- [ ] **Step 4: Run it and verify it passes**
+- [x] **Step 4: Run it and verify it passes**
 
   Run: `npm test -- src/components/doctors/doctor-profile.test.tsx`
   Expected: PASS.
 
-- [ ] **Step 5: Implement the profile page and not-found state**
+- [x] **Step 5: Implement the profile page and not-found state**
 
   Await `params`, call `getPublicDoctorById`, call `notFound()` for missing/inactive doctors, and render `DoctorProfile`.
 
-- [ ] **Step 6: Add the minimal booking destination**
+- [x] **Step 6: Add the minimal booking destination**
 
   Create `/booking` that reads `doctorId`, resolves the active doctor, and shows `المواعيد المتاحة` plus an `EmptyState` saying slots are being prepared. This is not the Phase 6 booking flow; it only keeps the profile action functional until availability is implemented.
 
-- [ ] **Step 7: Verify profile and inactive doctor behavior**
+- [x] **Step 7: Verify profile and inactive doctor behavior**
 
   Curl a seeded active doctor id and assert the name and `المواعيد المتاحة`; curl the seeded inactive doctor id and assert 404.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
   Commit with `feat(patient): build doctor profile and availability entry`.
 
@@ -291,29 +291,29 @@
 - Consumes: all prior tasks.
 - Produces: completed Phase 4 tracker entry and verified branch.
 
-- [ ] **Step 1: Update the phase tracker**
+- [x] **Step 1: Update the phase tracker**
 
   Mark Phase 4 as Completed only after the acceptance checks below pass.
 
-- [ ] **Step 2: Run the test suite**
+- [x] **Step 2: Run the test suite**
 
   Run: `npm test`
   Expected: PASS with all service, validation, format, schedule, and component tests green.
 
-- [ ] **Step 3: Run static checks**
+- [x] **Step 3: Run static checks**
 
   Run: `npm run typecheck && npm run lint && npm run build`
   Expected: all three commands exit 0.
 
-- [ ] **Step 4: Run the design scanner**
+- [x] **Step 4: Run the design scanner**
 
   Run: `node /Users/omarhany/.agents/skills/avoid-ai-design/scripts/detect.mjs src/app src/components DESIGN.md`
   Expected: 0 findings.
 
-- [ ] **Step 5: Verify mobile and desktop rendering**
+- [x] **Step 5: Verify mobile and desktop rendering**
 
   Use Playwright at 390px and 1440px for `/specialties`, `/doctors?specialtyId=<active-id>`, and `/doctors/<active-id>`. Expected: RTL layout, no horizontal overflow, readable text, and touch targets at least 44px.
 
-- [ ] **Step 6: Commit and open the PR**
+- [x] **Step 6: Commit and open the PR**
 
   Commit with `chore: mark phase 4 complete`, push `feat/phase4-public-discovery`, and open the PR against `dev`.

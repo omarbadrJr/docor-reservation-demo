@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/state";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { parseCatalogId } from "@/lib/validations/catalog";
 import { getPublicDoctorById } from "@/services/doctors";
 
@@ -16,7 +16,7 @@ export default async function BookingPage({
 
   let doctorName: string | null = null;
   if (doctorId) {
-    const client = await createClient();
+    const client = createAnonClient();
     doctorName = (await getPublicDoctorById(client, doctorId))?.fullName ?? null;
   }
 

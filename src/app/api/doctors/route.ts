@@ -1,5 +1,5 @@
+import { createAnonClient } from "@/lib/supabase/anon";
 import { parseCatalogId } from "@/lib/validations/catalog";
-import { createClient } from "@/lib/supabase/server";
 import { listDoctorsBySpecialty } from "@/services/doctors";
 import { getActiveSpecialty } from "@/services/specialties";
 
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const client = await createClient();
+    const client = createAnonClient();
     const specialty = await getActiveSpecialty(client, specialtyId);
     if (!specialty) {
       return Response.json(

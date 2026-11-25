@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { listActiveSpecialties } from "@/services/specialties";
 
 export async function GET() {
   try {
-    const client = await createClient();
+    const client = createAnonClient();
     const specialties = await listActiveSpecialties(client);
     return Response.json({ specialties });
   } catch (error) {

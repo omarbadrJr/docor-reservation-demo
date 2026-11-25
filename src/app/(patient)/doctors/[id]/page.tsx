@@ -2,9 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { DoctorProfile } from "@/components/doctors/doctor-profile";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { parseCatalogId } from "@/lib/validations/catalog";
 import { getPublicDoctorById } from "@/services/doctors";
+
+export const instant = false;
 
 export default async function DoctorProfilePage({
   params,
@@ -16,7 +18,7 @@ export default async function DoctorProfilePage({
     notFound();
   }
 
-  const client = await createClient();
+  const client = createAnonClient();
   const doctor = await getPublicDoctorById(client, id);
   if (!doctor) {
     notFound();

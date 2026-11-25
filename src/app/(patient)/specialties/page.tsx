@@ -1,11 +1,11 @@
 import { SpecialtyCard } from "@/components/doctors/specialty-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/state";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { listActiveSpecialties } from "@/services/specialties";
 
 export default async function SpecialtiesPage() {
-  const client = await createClient();
+  const client = createAnonClient();
   const specialties = await listActiveSpecialties(client);
 
   return (

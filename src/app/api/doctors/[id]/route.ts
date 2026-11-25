@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 import { parseCatalogId } from "@/lib/validations/catalog";
 import { getPublicDoctorById } from "@/services/doctors";
 
@@ -15,7 +15,7 @@ export async function GET(
   }
 
   try {
-    const client = await createClient();
+    const client = createAnonClient();
     const doctor = await getPublicDoctorById(client, id);
     if (!doctor) {
       return Response.json(

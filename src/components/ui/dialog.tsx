@@ -17,11 +17,11 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Popup>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-foreground/45 backdrop-blur-[2px]" />
+      <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-foreground/55" />
       <DialogPrimitive.Viewport className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <DialogPrimitive.Popup
           className={cn(
-            "relative max-h-[min(42rem,calc(100dvh-2rem))] w-full max-w-lg overflow-y-auto rounded-3xl border border-border bg-card p-6 text-card-foreground shadow-[0_30px_90px_-36px_rgba(15,95,92,0.55)]",
+            "relative max-h-[min(42rem,calc(100dvh-2rem))] w-full max-w-lg overflow-y-auto rounded-md border-2 border-foreground/20 bg-card p-6 text-card-foreground",
             className,
           )}
           {...props}
@@ -29,7 +29,7 @@ function DialogContent({
           {children}
           <DialogPrimitive.Close
             aria-label="اقفل"
-            className="absolute top-4 left-4 inline-flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
+            className="absolute top-4 left-4 inline-flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/30"
           >
             <X className="size-5" aria-hidden="true" />
           </DialogPrimitive.Close>

@@ -33,7 +33,7 @@ function NavLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition-colors",
+        "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold transition-colors",
         active ? activeClassName : inactiveClassName,
         className,
       )}

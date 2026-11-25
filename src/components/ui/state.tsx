@@ -1,8 +1,8 @@
 import {
   AlertTriangle,
-  CheckCircle2,
   Inbox,
   Loader2,
+  Stamp,
   type LucideIcon,
 } from "lucide-react";
 import * as React from "react";
@@ -31,15 +31,11 @@ function StateFrame({
       role={role}
       aria-live={live}
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-6 py-10 text-center",
+        "flex flex-col items-center justify-center rounded-md border border-border bg-card px-6 py-10 text-center",
         className,
       )}
     >
-      {icon ? (
-        <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted text-primary">
-          {icon}
-        </div>
-      ) : null}
+      {icon ? <div className="mb-3 text-primary">{icon}</div> : null}
       <h2 className="text-xl font-extrabold">{title}</h2>
       {description ? (
         <p className="mt-2 max-w-md text-sm leading-7 text-muted-foreground">
@@ -131,7 +127,7 @@ function SuccessState({
       className={className}
       role="status"
       live="polite"
-      icon={icon ?? <StateIcon icon={CheckCircle2} className="text-primary" />}
+      icon={icon ?? <StateIcon icon={Stamp} className="text-primary" />}
     />
   );
 }

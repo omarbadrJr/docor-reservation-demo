@@ -1,11 +1,23 @@
 -- Phase 2 / Task 5: transactional booking operations.
 -- The database remains the source of truth for slot availability and overlap checks.
+--
+-- Review fixes:
+-- - availability now accounts for existing appointments;
+-- - starts must align to the doctor's slot duration;
+-- - patient mutations require the reference + phone used for the booking.
+
+-- Drop earlier signatures so an upgraded database cannot retain the weaker versions.
+drop function if exists public.is_slot_available(uuid, date, time, time);
+drop function if exists public.reschedule_appointment(uuid, date, time);
+drop function if exists public.cancel_appointment(uuid);
 
 create or replace function public.is_slot_available(
   p_doctor_id uuid,
   p_date date,
   p_start time,
-  p_end time
+  p_end time,
+  p_slot_duration_minutes integer default null,
+  p_ignore_appointment_id uuid default null
 )
 returns boolean
 language plpgsql
@@ -14,9 +26,12 @@ security definer
 set search_path = public, extensions, pg_temp
 as $$
 declare
-  v_ok boolean;
+  v_window_ok boolean;
 begin
   if p_doctor_id is null or p_date is null or p_start is null or p_end is null or p_end <= p_start then
+    return false;
+  end if;
+  if p_slot_duration_minutes is not null and p_slot_duration_minutes not between 5 and 480 then
     return false;
   end if;
 
@@ -62,10 +77,38 @@ begin
       from public.manual_availability m
       where m.doctor_id = p_doctor_id and m.availability_date = p_date
     ) as windows
-    where windows.start_time <= p_start and windows.end_time >= p_end
-  ) into v_ok;
+    where windows.start_time <= p_start
+      and windows.end_time >= p_end
+      and (
+        p_slot_duration_minutes is null
+        or mod(
+          (extract(epoch from (p_start - windows.start_time)) / 60)::integer,
+          p_slot_duration_minutes
+        ) = 0
+      )
+  ) into v_window_ok;
 
-  return v_ok;
+  if not v_window_ok then
+    return false;
+  end if;
+
+  -- Use the same overlap rule as appointments_no_active_overlap.
+  return not exists (
+    select 1
+    from public.appointments a
+    where a.doctor_id = p_doctor_id
+      and a.status in ('CONFIRMED', 'CHECKED_IN')
+      and (p_ignore_appointment_id is null or a.id <> p_ignore_appointment_id)
+      and tstzrange(
+        (a.appointment_date + a.start_time) at time zone 'Africa/Cairo',
+        (a.appointment_date + a.end_time) at time zone 'Africa/Cairo',
+        '[)'
+      ) && tstzrange(
+        (p_date + p_start) at time zone 'Africa/Cairo',
+        (p_date + p_end) at time zone 'Africa/Cairo',
+        '[)'
+      )
+  );
 end;
 $$;
 
@@ -111,7 +154,7 @@ begin
     raise exception 'Invalid slot time';
   end if;
 
-  if not public.is_slot_available(p_doctor_id, p_date, p_start, v_end) then
+  if not public.is_slot_available(p_doctor_id, p_date, p_start, v_end, v_duration) then
     raise exception 'Slot is not available';
   end if;
 
@@ -140,7 +183,9 @@ $$;
 create or replace function public.reschedule_appointment(
   p_appointment_id uuid,
   p_date date,
-  p_start time
+  p_start time,
+  p_reference_number text,
+  p_patient_phone text
 )
 returns public.appointments
 language plpgsql
@@ -156,6 +201,8 @@ begin
   select * into v_booking
   from public.appointments
   where id = p_appointment_id
+    and reference_number = upper(btrim(p_reference_number))
+    and patient_phone = btrim(p_patient_phone)
   for update;
 
   if not found then
@@ -178,7 +225,9 @@ begin
   if v_end <= p_start then
     raise exception 'Invalid slot time';
   end if;
-  if not public.is_slot_available(v_booking.doctor_id, p_date, p_start, v_end) then
+  if not public.is_slot_available(
+    v_booking.doctor_id, p_date, p_start, v_end, v_duration, p_appointment_id
+  ) then
     raise exception 'Slot is not available';
   end if;
 
@@ -191,25 +240,31 @@ begin
 end;
 $$;
 
-create or replace function public.cancel_appointment(p_appointment_id uuid)
+create or replace function public.cancel_appointment(
+  p_appointment_id uuid,
+  p_reference_number text,
+  p_patient_phone text
+)
 returns public.appointments
 language plpgsql
 security definer
 set search_path = public, extensions, pg_temp
 as $$
 declare
-  v_status text;
+  v_booking public.appointments;
   v_result public.appointments;
 begin
-  select status into v_status
+  select * into v_booking
   from public.appointments
   where id = p_appointment_id
+    and reference_number = upper(btrim(p_reference_number))
+    and patient_phone = btrim(p_patient_phone)
   for update;
 
   if not found then
     raise exception 'Booking not found';
   end if;
-  if v_status not in ('CONFIRMED', 'CHECKED_IN') then
+  if v_booking.status not in ('CONFIRMED', 'CHECKED_IN') then
     raise exception 'Booking cannot be cancelled';
   end if;
 
@@ -222,12 +277,12 @@ begin
 end;
 $$;
 
-revoke all on function public.is_slot_available(uuid, date, time, time) from public;
+revoke all on function public.is_slot_available(uuid, date, time, time, integer, uuid) from public;
 revoke all on function public.create_appointment(uuid, date, time, text, text) from public;
-revoke all on function public.reschedule_appointment(uuid, date, time) from public;
-revoke all on function public.cancel_appointment(uuid) from public;
+revoke all on function public.reschedule_appointment(uuid, date, time, text, text) from public;
+revoke all on function public.cancel_appointment(uuid, text, text) from public;
 
-grant execute on function public.is_slot_available(uuid, date, time, time) to anon, authenticated;
+grant execute on function public.is_slot_available(uuid, date, time, time, integer, uuid) to anon, authenticated;
 grant execute on function public.create_appointment(uuid, date, time, text, text) to anon, authenticated;
-grant execute on function public.reschedule_appointment(uuid, date, time) to anon, authenticated;
-grant execute on function public.cancel_appointment(uuid) to anon, authenticated;
+grant execute on function public.reschedule_appointment(uuid, date, time, text, text) to anon, authenticated;
+grant execute on function public.cancel_appointment(uuid, text, text) to anon, authenticated;

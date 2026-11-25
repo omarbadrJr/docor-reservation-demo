@@ -2,6 +2,9 @@
  * Shared database types for the Supabase project.
  * Column names intentionally match SQL exactly (snake_case); dates, times,
  * numeric values, and UUIDs are represented as strings.
+ *
+ * Row shapes are type aliases rather than interfaces so they satisfy the
+ * Record<string, unknown> constraint used by @supabase/postgrest-js.
  */
 
 export type AppointmentStatus =
@@ -15,7 +18,7 @@ export type ScheduleExceptionType = "CLOSED" | "MODIFIED_HOURS" | "EXTRA_HOURS";
 
 export type AdminRole = "OWNER" | "RECEPTIONIST";
 
-export interface Clinic {
+export type Clinic = {
   id: string;
   name: string;
   address: string;
@@ -23,18 +26,18 @@ export interface Clinic {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Specialty {
+export type Specialty = {
   id: string;
   name: string;
   description: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface Doctor {
+export type Doctor = {
   id: string;
   clinic_id: string;
   specialty_id: string;
@@ -48,9 +51,9 @@ export interface Doctor {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface WeeklySchedule {
+export type WeeklySchedule = {
   id: string;
   doctor_id: string;
   day_of_week: number;
@@ -58,18 +61,18 @@ export interface WeeklySchedule {
   end_time: string;
   is_active: boolean;
   created_at: string;
-}
+};
 
-export interface ManualAvailability {
+export type ManualAvailability = {
   id: string;
   doctor_id: string;
   availability_date: string;
   start_time: string;
   end_time: string;
   created_at: string;
-}
+};
 
-export interface ScheduleException {
+export type ScheduleException = {
   id: string;
   doctor_id: string;
   exception_date: string;
@@ -78,9 +81,9 @@ export interface ScheduleException {
   end_time: string | null;
   reason: string | null;
   created_at: string;
-}
+};
 
-export interface Appointment {
+export type Appointment = {
   id: string;
   reference_number: string;
   qr_token: string;
@@ -94,9 +97,9 @@ export interface Appointment {
   status: AppointmentStatus;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface AdminProfile {
+export type AdminProfile = {
   id: string;
   name: string;
   email: string;
@@ -105,7 +108,7 @@ export interface AdminProfile {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-}
+};
 
 export type Database = {
   public: {
@@ -248,15 +251,32 @@ export type Database = {
         Returns: Appointment;
       };
       reschedule_appointment: {
-        Args: { p_appointment_id: string; p_date: string; p_start: string };
+        Args: {
+          p_appointment_id: string;
+          p_date: string;
+          p_start: string;
+          p_reference_number: string;
+          p_patient_phone: string;
+        };
         Returns: Appointment;
       };
       cancel_appointment: {
-        Args: { p_appointment_id: string };
+        Args: {
+          p_appointment_id: string;
+          p_reference_number: string;
+          p_patient_phone: string;
+        };
         Returns: Appointment;
       };
       is_slot_available: {
-        Args: { p_doctor_id: string; p_date: string; p_start: string; p_end: string };
+        Args: {
+          p_doctor_id: string;
+          p_date: string;
+          p_start: string;
+          p_end: string;
+          p_slot_duration_minutes?: number;
+          p_ignore_appointment_id?: string;
+        };
         Returns: boolean;
       };
     };

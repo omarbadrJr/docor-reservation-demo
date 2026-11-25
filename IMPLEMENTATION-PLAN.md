@@ -21,7 +21,7 @@
 | Phase | Name | Status |
 |---|---|---|
 | Phase 1 | Project Setup | Completed |
-| Phase 2 | Database Design | Not Started |
+| Phase 2 | Database Design | In Progress |
 | Phase 3 | Application Foundation | Not Started |
 | Phase 4 | Public Doctor Discovery | Not Started |
 | Phase 5 | Scheduling and Availability | Not Started |

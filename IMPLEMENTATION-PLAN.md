@@ -22,7 +22,7 @@
 |---|---|---|
 | Phase 1 | Project Setup | Completed |
 | Phase 2 | Database Design | Completed |
-| Phase 3 | Application Foundation | Not Started |
+| Phase 3 | Application Foundation | Completed |
 | Phase 4 | Public Doctor Discovery | Not Started |
 | Phase 5 | Scheduling and Availability | Not Started |
 | Phase 6 | Appointment Booking | Not Started |

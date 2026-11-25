@@ -144,20 +144,20 @@ Apply 0001–0005 in PGlite with a fixed seed clinic/doctor/schedule. Assert: bo
 - Create: `supabase/migrations/0006_doctor_photos_storage.sql`
 
 **Interfaces:**
-- Consumes: `storage.buckets`, `storage.objects`, `public.current_admin_role()`
-- Produces: public bucket `doctor-photos`, three storage policies.
+- Consumes: `storage.buckets`
+- Produces: public bucket `doctor-photos` only. Supabase already enables RLS on `storage.objects`, and migrations cannot alter that managed table.
 
 - [ ] **Step 1: Write the migration**
 
-Insert the public `doctor-photos` bucket with a 5 MB file-size limit and allowed image MIME types using an idempotent insert. Add policies: public `SELECT` in that bucket, `INSERT`/`UPDATE`/`DELETE` only when `current_admin_role() = 'OWNER'`.
+Insert the public `doctor-photos` bucket with a 5 MB file-size limit and allowed image MIME types using an idempotent insert. Do not alter `storage.objects` or create policies there; owner uploads will use a server-side route with the service-role key, and public downloads use the bucket's public URL.
 
 - [ ] **Step 2: Verify the storage setup**
 
-Apply 0001–0006 in PGlite with stub `storage.buckets`/`storage.objects`. Assert the bucket exists, is public, has the size limit, and that the three policies exist with the owner-only write condition.
+Apply 0001–0006 in PGlite with stub `storage.buckets`/`storage.objects`. Assert the bucket exists, is public, has the size limit, and that the migration contains no privileged `storage.objects` statements.
 
 - [ ] **Step 3: Commit**
 
-`git add supabase/migrations/0006_doctor_photos_storage.sql && git commit -m "feat(db): add doctor photo storage bucket and policies"`
+`git add supabase/migrations/0006_doctor_photos_storage.sql && git commit -m "feat(db): add doctor photo storage bucket"`
 
 ### Task 7: Fictional demo seed data
 

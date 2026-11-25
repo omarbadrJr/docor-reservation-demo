@@ -75,7 +75,7 @@ Implement:
 - Appointment status enum/check constraint (`CONFIRMED`, `CHECKED_IN`, `COMPLETED`, `CANCELLED`, `NO_SHOW`).
 - PostgreSQL double-booking prevention (e.g., `btree_gist` exclusion constraint blocking overlapping active appointments for the same doctor where status is active, plus transactional PostgreSQL RPCs for atomic booking and rescheduling).
 - Baseline Row Level Security (RLS) policies enforcing public read of active catalog data and server/role-scoped access to appointments and admin records.
-- Supabase Storage bucket + policies for doctor photographs.
+- Public Supabase Storage bucket for doctor photographs; owner uploads use a server-side route with the service-role key.
 - Fictional seed dataset in `supabase/seed.sql` meeting `SRS.md` §12 (>5 doctors, multiple clinics, several specialties, varied fees and weekly schedules, manual availability, schedule exceptions, sample bookings across statuses — clearly marked fictional).
 - Shared TypeScript database types in `src/types/database.ts`.
 

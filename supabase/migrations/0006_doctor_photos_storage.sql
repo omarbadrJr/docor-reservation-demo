@@ -1,5 +1,7 @@
 -- Phase 2 / Task 6: public bucket for doctor photographs.
--- Only the website owner can upload, replace, or remove photos.
+-- Supabase enables RLS on storage.objects and owns that managed table, so this
+-- migration only declares the bucket. Uploads must go through a server route
+-- using the service-role key; public downloads use the bucket's public URL.
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
@@ -13,18 +15,3 @@ on conflict (id) do update
 set public = excluded.public,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
-
-alter table storage.objects enable row level security;
-
-create policy "Doctor photos are publicly readable" on storage.objects
-for select to public
-using (bucket_id = 'doctor-photos');
-
-create policy "Only owner can upload doctor photos" on storage.objects
-for insert to authenticated
-with check (bucket_id = 'doctor-photos' and public.current_admin_role() = 'OWNER');
-
-create policy "Only owner can manage doctor photos" on storage.objects
-for all to authenticated
-using (bucket_id = 'doctor-photos' and public.current_admin_role() = 'OWNER')
-with check (bucket_id = 'doctor-photos' and public.current_admin_role() = 'OWNER');

@@ -2,9 +2,10 @@ import Link from "next/link";
 import * as React from "react";
 
 import { DoctorPhoto } from "@/components/doctors/doctor-photo";
-import type { DoctorCardData } from "@/types/catalog";
+import { buttonVariants } from "@/components/ui/button";
 import { formatConsultationFee } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { DoctorCardData } from "@/types/catalog";
 
 function DoctorCard({
   doctor,
@@ -13,26 +14,46 @@ function DoctorCard({
   doctor: DoctorCardData;
   className?: string;
 }) {
+  const doctorHref = `/doctors/${encodeURIComponent(doctor.id)}`;
+  const bookingHref = `/booking?doctorId=${encodeURIComponent(doctor.id)}`;
+
   return (
-    <Link
-      href={`/doctors/${encodeURIComponent(doctor.id)}`}
-      className={cn("block rounded-md focus-visible:ring-3 focus-visible:ring-ring", className)}
+    <article
+      className={cn(
+        "flex h-full flex-col justify-between rounded-md border border-border bg-card p-5 transition-colors hover:border-primary/40 sm:p-6",
+        className,
+      )}
     >
-      <article className="rounded-md border border-border bg-card p-5 transition-colors hover:border-primary/40 sm:p-6">
+      <div>
         <div className="flex items-start gap-4">
-          <DoctorPhoto photoUrl={null} name={doctor.fullName} className="size-20" />
+          <DoctorPhoto
+            photoUrl={doctor.photoUrl}
+            name={doctor.fullName}
+            className="size-20"
+          />
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-primary">{doctor.specialtyName}</p>
+            <p className="text-xs font-bold text-primary">
+              {doctor.specialtyName}
+            </p>
             <h2 className="mt-1 font-heading text-xl font-extrabold">
-              {doctor.fullName}
+              <Link
+                href={doctorHref}
+                className="rounded-sm hover:underline focus-visible:ring-3 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                {doctor.fullName}
+              </Link>
             </h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              {doctor.bio ?? "مفيش وصف مضاف للدكتور. تقدر تشوف المواعيد والعنوان."}
+              {doctor.bio ??
+                "مفيش وصف مضاف للدكتور. تقدر تشوف المواعيد والعنوان."}
             </p>
           </div>
         </div>
 
-        <div className="my-5 border-t border-dashed border-border" aria-hidden="true" />
+        <div
+          className="my-5 border-t border-dashed border-border"
+          aria-hidden="true"
+        />
 
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
@@ -54,8 +75,29 @@ function DoctorCard({
             </dd>
           </div>
         </dl>
-      </article>
-    </Link>
+      </div>
+
+      <div className="mt-5 flex flex-col gap-2.5 border-t border-border pt-4 sm:flex-row">
+        <Link
+          href={bookingHref}
+          className={cn(
+            buttonVariants({ variant: "default", size: "default" }),
+            "w-full sm:flex-1",
+          )}
+        >
+          احجز عند الدكتور
+        </Link>
+        <Link
+          href={doctorHref}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "default" }),
+            "w-full sm:flex-1",
+          )}
+        >
+          تفاصيل الدكتور
+        </Link>
+      </div>
+    </article>
   );
 }
 

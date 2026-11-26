@@ -7,7 +7,7 @@ import {
 } from "@/components/layout/dashboard-shell";
 
 const navItems: DashboardNavItem[] = [
-  { href: "/receptionist", label: "مواعيد النهارده", icon: CalendarDays },
+  { href: "/receptionist", label: "مواعيد النهارده", icon: CalendarDays, exact: true },
   { href: "/receptionist/appointments", label: "كل الحجوزات", icon: Users },
   { href: "/receptionist/check-in", label: "تسجيل وصول", icon: ClipboardCheck },
 ];

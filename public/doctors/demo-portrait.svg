@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">صورة توضيحية لدكتور تجريبي</title>
+  <desc id="desc">رسم بسيط لوجه طبيب بزي أبيض، ضمن بيانات تجريبية غير حقيقية.</desc>
+  <rect width="240" height="240" fill="#F1F5F6"/>
+  <rect x="10" y="10" width="220" height="220" rx="10" fill="#FFFFFF" stroke="#C7D3D6" stroke-width="2"/>
+  <circle cx="120" cy="96" r="42" fill="#DDE7E9"/>
+  <path d="M78 92a42 42 0 0 1 84 0v6H78z" fill="#102C34"/>
+  <circle cx="105" cy="100" r="4" fill="#102C34"/>
+  <circle cx="135" cy="100" r="4" fill="#102C34"/>
+  <path d="M110 120q10 8 20 0" fill="none" stroke="#4A6269" stroke-width="3" stroke-linecap="round"/>
+  <path d="M52 230c4-46 30-70 68-70s64 24 68 70z" fill="#FFFFFF" stroke="#C7D3D6" stroke-width="2"/>
+  <path d="M120 160v70" stroke="#C7D3D6" stroke-width="2"/>
+  <path d="M84 172l18 22 18-22" fill="none" stroke="#9A4B00" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="120" y="224" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#4A6269">DEMO / FICTIONAL</text>
+</svg>

@@ -70,7 +70,7 @@ Follow `PROJECT-STRUCTURE.md` incrementally — create folders and files only wh
   - `npm run typecheck` — `next typegen && tsc --noEmit` (route types such as `LayoutProps` are generated first).
   - `npm run lint` — ESLint.
   - `npm run build` — production build (Turbopack).
-  - No test runner is configured yet; add one when tests are introduced and document it here.
+  - `npm test` — `tsx --test` for service, validation, and component tests.
 - **Environment:** Copy `.env.example` to `.env.local`. Never commit `.env.local` or secrets. `SUPABASE_SERVICE_ROLE_KEY` is server-only.
 
 <!-- BEGIN:nextjs-agent-rules -->

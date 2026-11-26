@@ -1,4 +1,4 @@
-import { createAnonClient } from "@/lib/supabase/anon";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { parseMonth } from "@/lib/validations/availability";
 import { parseCatalogId } from "@/lib/validations/catalog";
 import { listDoctorAvailableDates } from "@/services/availability";
@@ -18,7 +18,7 @@ export async function GET(
   }
 
   try {
-    const client = createAnonClient();
+    const client = createAdminClient();
     const dates = await listDoctorAvailableDates(client, id, month);
     if (!dates) {
       return Response.json(

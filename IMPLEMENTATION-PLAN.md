@@ -27,7 +27,7 @@
 | Phase 5 | Scheduling and Availability | Completed |
 | Phase 6 | Appointment Booking | Completed |
 | Phase 7 | Booking Management | Completed |
-| Phase 8 | Authentication and Authorization | Not Started |
+| Phase 8 | Authentication and Authorization | Completed |
 | Phase 9 | Owner Dashboard | Not Started |
 | Phase 10 | Receptionist Dashboard | Not Started |
 | Phase 11 | Testing and Quality Assurance | Not Started |

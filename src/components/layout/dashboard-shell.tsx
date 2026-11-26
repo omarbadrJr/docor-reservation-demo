@@ -17,6 +17,8 @@ type DashboardShellProps = {
   navItems: DashboardNavItem[];
   userLabel: string;
   roleLabel: string;
+  logoutSlot?: React.ReactNode;
+  mobileLogoutSlot?: React.ReactNode;
   children: React.ReactNode;
 };
 
@@ -32,8 +34,11 @@ function DashboardShell({
   navItems,
   userLabel,
   roleLabel,
+  logoutSlot,
+  mobileLogoutSlot,
   children,
 }: DashboardShellProps) {
+  const headerLogoutSlot = mobileLogoutSlot ?? logoutSlot;
   return (
     <div className="min-h-dvh bg-muted/40 lg:grid lg:grid-cols-[18rem_1fr]">
       <aside className="hidden bg-sidebar text-sidebar-foreground lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col">
@@ -75,23 +80,29 @@ function DashboardShell({
           <p className="mt-1 text-xs text-sidebar-foreground/60">
             {roleLabel}
           </p>
+          {logoutSlot ? <div className="mt-3">{logoutSlot}</div> : null}
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-col">
         <header className="sticky top-0 z-40 border-b border-white/15 bg-foreground text-background lg:hidden">
-          <div className="flex h-16 items-center justify-between gap-4 px-4">
-            <Link href="/" className="flex min-h-11 items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <div className="flex min-h-16 flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2">
+            <Link href="/" className="flex min-h-11 min-w-0 items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <Stethoscope className="size-4" aria-hidden="true" />
               </span>
-              <span className="font-heading text-base font-extrabold">
+              <span className="truncate font-heading text-base font-extrabold">
                 {title}
               </span>
             </Link>
-            <div className="text-left">
-              <p className="text-sm font-bold">{userLabel}</p>
-              <p className="text-[0.7rem] text-background/70">{roleLabel}</p>
+            <div className="flex items-center gap-3">
+              <div className="text-left">
+                <p className="text-sm font-bold">{userLabel}</p>
+                <p className="text-[0.7rem] text-background/70">{roleLabel}</p>
+              </div>
+              {headerLogoutSlot ? (
+                <div className="shrink-0">{headerLogoutSlot}</div>
+              ) : null}
             </div>
           </div>
 
@@ -124,4 +135,4 @@ function DashboardShell({
   );
 }
 
-export { DashboardShell, type DashboardNavItem };
+export { DashboardShell, type DashboardNavItem, type DashboardShellProps };

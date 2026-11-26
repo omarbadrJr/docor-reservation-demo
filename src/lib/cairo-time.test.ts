@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { dayOfWeek, getCairoNow, listDatesInMonth } from "./cairo-time";
+import { dayOfWeek, getCairoNow, listDatesInMonth, shiftMonth } from "./cairo-time";
 
 describe("getCairoNow", () => {
   it("uses Cairo winter time (UTC+2)", () => {
@@ -37,5 +37,27 @@ describe("dayOfWeek", () => {
   it("returns Sunday as 0 and Thursday as 4", () => {
     assert.equal(dayOfWeek("2026-11-01"), 0);
     assert.equal(dayOfWeek("2026-11-26"), 4);
+  });
+});
+
+describe("shiftMonth", () => {
+  it("keeps the same month when delta is zero", () => {
+    assert.equal(shiftMonth("2026-11", 0), "2026-11");
+  });
+
+  it("shifts forward and backward within the same year", () => {
+    assert.equal(shiftMonth("2026-06", 2), "2026-08");
+    assert.equal(shiftMonth("2026-06", -2), "2026-04");
+  });
+
+  it("crosses single-month year boundaries cleanly", () => {
+    assert.equal(shiftMonth("2026-12", 1), "2027-01");
+    assert.equal(shiftMonth("2026-01", -1), "2025-12");
+  });
+
+  it("handles multi-month positive and negative deltas across years", () => {
+    assert.equal(shiftMonth("2026-11", 14), "2028-01");
+    assert.equal(shiftMonth("2026-02", -15), "2024-11");
+    assert.equal(shiftMonth("2026-01", -24), "2024-01");
   });
 });

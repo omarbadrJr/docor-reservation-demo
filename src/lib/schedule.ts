@@ -15,7 +15,7 @@ const weekdayLabels = [
   "السبت",
 ] as const;
 
-function formatTime(value: string): string {
+export function formatArabicTime(value: string): string {
   const [hourPart, minutes] = value.split(":");
   const hours = Number(hourPart);
   const hour = hours % 12 || 12;
@@ -26,6 +26,6 @@ function formatTime(value: string): string {
 export function formatWorkingSchedule(rows: WorkingScheduleRow[]): string[] {
   return rows.map((row) => {
     const label = weekdayLabels[row.day_of_week] ?? "يوم غير محدد";
-    return `${label}: ${formatTime(row.start_time)} - ${formatTime(row.end_time)}`;
+    return `${label}: ${formatArabicTime(row.start_time)} - ${formatArabicTime(row.end_time)}`;
   });
 }

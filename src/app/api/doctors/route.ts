@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
   if (!specialtyId) {
     return Response.json(
-      { error: "اختار تخصص صحيت من القائمة، وبعدين شوف الدكاترة." },
+      { error: "اختار تخصص صح من القائمة، وبعدين شوف الدكاترة." },
       { status: 400 },
     );
   }

@@ -50,6 +50,7 @@ export async function listDoctorsBySpecialty(
         clinicName: clinic.name,
         clinicAddress: clinic.address,
         consultationFee: row.consultation_fee,
+        photoUrl: row.photo_url,
       };
     });
 }

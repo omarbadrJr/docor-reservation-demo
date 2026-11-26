@@ -63,7 +63,7 @@ function DoctorProfile({
                 </dd>
               </div>
               <div>
-                <dt>عنوان العيادة</dt>
+                <dt className="font-bold">عنوان العيادة</dt>
                 <dd className="mt-1 leading-7 text-muted-foreground">
                   {doctor.clinicAddress}
                 </dd>

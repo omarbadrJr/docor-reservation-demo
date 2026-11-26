@@ -13,13 +13,14 @@ import {
 import { getCairoNow, listDatesInMonth, type CairoNow } from "@/lib/cairo-time";
 
 import { getActiveClinic } from "./clinics";
-import type { CatalogClient } from "./specialties";
+import { getActiveSpecialty, type CatalogClient } from "./specialties";
 
 const ACTIVE_APPOINTMENT_STATUSES = ["CONFIRMED", "CHECKED_IN"] as const;
 
 type ActiveDoctor = {
   id: string;
   clinic_id: string;
+  specialty_id: string;
   slot_duration_minutes: number;
 };
 
@@ -29,7 +30,7 @@ async function getActiveDoctor(
 ): Promise<ActiveDoctor | null> {
   const { data, error } = await client
     .from("doctors")
-    .select("id, clinic_id, slot_duration_minutes")
+    .select("id, clinic_id, specialty_id, slot_duration_minutes")
     .eq("id", doctorId)
     .eq("is_active", true)
     .maybeSingle();
@@ -110,8 +111,11 @@ async function getAvailabilityContext(
     return null;
   }
 
-  const clinic = await getActiveClinic(client, doctor.clinic_id);
-  if (!clinic) {
+  const [clinic, specialty] = await Promise.all([
+    getActiveClinic(client, doctor.clinic_id),
+    getActiveSpecialty(client, doctor.specialty_id),
+  ]);
+  if (!clinic || !specialty) {
     return null;
   }
 

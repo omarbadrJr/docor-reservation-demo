@@ -12,10 +12,10 @@ export type DoctorCardData = {
   clinicName: string;
   clinicAddress: string;
   consultationFee: string;
+  photoUrl: string | null;
 };
 
 export type DoctorProfileData = DoctorCardData & {
-  photoUrl: string | null;
   qualifications: string | null;
   experienceYears: number | null;
   workingSchedule: Array<

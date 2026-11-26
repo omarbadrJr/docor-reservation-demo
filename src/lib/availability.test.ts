@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import type { WorkingWindowSource } from "@/types/availability";
+import type { BookedWindow, WorkingWindowSource } from "@/types/availability";
 
-import { resolveWorkingWindows } from "./availability";
+import {
+  classifyAvailability,
+  filterBookedSlots,
+  generateSlots,
+  resolveWorkingWindows,
+} from "./availability";
 
 const weekly = (
   dayOfWeek: number,
@@ -110,6 +115,151 @@ describe("resolveWorkingWindows", () => {
         source({ weekly: [weekly(1, "09:00:00", "17:00:00")] }),
       ),
       [],
+    );
+  });
+});
+
+describe("generateSlots", () => {
+  it("splits a window into aligned slots", () => {
+    assert.deepEqual(
+      generateSlots(
+        [{ start: "09:00", end: "10:00" }],
+        30,
+        "2026-11-01",
+        { date: "2026-11-01", time: "08:00" },
+      ),
+      [
+        { start: "09:00", end: "09:30" },
+        { start: "09:30", end: "10:00" },
+      ],
+    );
+  });
+
+  it("drops a trailing partial slot", () => {
+    assert.deepEqual(
+      generateSlots(
+        [{ start: "09:00", end: "10:00" }],
+        45,
+        "2026-11-01",
+        { date: "2026-11-01", time: "08:00" },
+      ),
+      [{ start: "09:00", end: "09:45" }],
+    );
+  });
+
+  it("deduplicates slots produced by overlapping windows", () => {
+    assert.deepEqual(
+      generateSlots(
+        [
+          { start: "09:00", end: "10:00" },
+          { start: "09:00", end: "09:30" },
+        ],
+        30,
+        "2026-11-01",
+        { date: "2026-11-01", time: "08:00" },
+      ),
+      [
+        { start: "09:00", end: "09:30" },
+        { start: "09:30", end: "10:00" },
+      ],
+    );
+  });
+
+  it("excludes past slots today and all slots on earlier dates", () => {
+    const windows = [{ start: "09:00", end: "10:00" }];
+
+    assert.deepEqual(
+      generateSlots(windows, 30, "2026-11-01", {
+        date: "2026-11-01",
+        time: "09:15",
+      }),
+      [
+        { start: "09:30", end: "10:00" },
+      ],
+    );
+    assert.deepEqual(
+      generateSlots(windows, 30, "2026-10-31", {
+        date: "2026-11-01",
+        time: "08:00",
+      }),
+      [],
+    );
+  });
+
+  it("returns no slots for an invalid duration", () => {
+    assert.deepEqual(
+      generateSlots(
+        [{ start: "09:00", end: "10:00" }],
+        0,
+        "2026-11-01",
+        { date: "2026-11-01", time: "08:00" },
+      ),
+      [],
+    );
+  });
+});
+
+describe("filterBookedSlots", () => {
+  const slots = [
+    { start: "09:00", end: "09:30" },
+    { start: "09:30", end: "10:00" },
+  ];
+
+  const appointment = (
+    date: string,
+    start: string,
+    end: string,
+  ): BookedWindow => ({
+    appointment_date: date,
+    start_time: start,
+    end_time: end,
+  });
+
+  it("removes every slot that overlaps an active booking", () => {
+    assert.deepEqual(
+      filterBookedSlots(
+        slots,
+        [appointment("2026-11-01", "09:15:00", "09:45:00")],
+        "2026-11-01",
+      ),
+      [],
+    );
+  });
+
+  it("keeps adjacent slots and ignores bookings on other dates", () => {
+    assert.deepEqual(
+      filterBookedSlots(
+        slots,
+        [
+          appointment("2026-11-01", "09:30:00", "10:00:00"),
+          appointment("2026-11-02", "09:00:00", "09:30:00"),
+        ],
+        "2026-11-01",
+      ),
+      [{ start: "09:00", end: "09:30" }],
+    );
+  });
+});
+
+describe("classifyAvailability", () => {
+  it("marks a day with no working windows as OFF", () => {
+    assert.equal(classifyAvailability([], []), "OFF");
+  });
+
+  it("marks a working day with no free slots as FULL", () => {
+    assert.equal(
+      classifyAvailability([{ start: "09:00", end: "10:00" }], []),
+      "FULL",
+    );
+  });
+
+  it("marks a working day with free slots as AVAILABLE", () => {
+    assert.equal(
+      classifyAvailability(
+        [{ start: "09:00", end: "10:00" }],
+        [{ start: "09:00", end: "09:30" }],
+      ),
+      "AVAILABLE",
     );
   });
 });

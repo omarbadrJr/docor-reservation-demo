@@ -41,12 +41,13 @@ const doctor = (
   specialtyId: string,
   isActive: boolean,
   fullName: string,
+  photoUrl: string | null = "/doctors/demo-portrait.svg",
 ): Doctor => ({
   id,
   clinic_id: clinicId,
   specialty_id: specialtyId,
   full_name: fullName,
-  photo_url: null,
+  photo_url: photoUrl,
   bio: "خبرة في متابعة الحالات",
   qualifications: "بكالوريوس طب",
   experience_years: 10,
@@ -169,6 +170,7 @@ describe("listDoctorsBySpecialty", () => {
         clinicName: "عيادة النيل",
         clinicAddress: "شارع النيل، البحيرة",
         consultationFee: "150.00",
+        photoUrl: "/doctors/demo-portrait.svg",
       },
     ]);
   });

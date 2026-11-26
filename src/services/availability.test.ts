@@ -8,12 +8,14 @@ import {
 
 const DOCTOR_ID = "33000000-0000-0000-0000-000000000001";
 const CLINIC_ID = "11000000-0000-0000-0000-000000000001";
+const SPECIALTY_ID = "22000000-0000-0000-0000-000000000001";
 
 type Dataset = Record<string, Record<string, unknown>[]>;
 
 const doctor = (isActive = true) => ({
   id: DOCTOR_ID,
   clinic_id: CLINIC_ID,
+  specialty_id: SPECIALTY_ID,
   slot_duration_minutes: 30,
   is_active: isActive,
 });
@@ -22,6 +24,13 @@ const clinic = (isActive = true) => ({
   id: CLINIC_ID,
   name: "عيادة النيل",
   address: "شارع النيل، البحيرة",
+  is_active: isActive,
+});
+
+const specialty = (isActive = true) => ({
+  id: SPECIALTY_ID,
+  name: "باطنة",
+  description: "أمراض الباطنة",
   is_active: isActive,
 });
 
@@ -120,6 +129,7 @@ function fakeClient(dataset: Dataset) {
 const baseDataset = (): Dataset => ({
   doctors: [doctor()],
   clinics: [clinic()],
+  specialties: [specialty()],
   weekly_schedules: [weekly(0, "09:00:00", "10:00:00")],
   manual_availability: [],
   schedule_exceptions: [],
@@ -161,6 +171,18 @@ describe("getDoctorAvailability", () => {
     assert.equal(
       await getDoctorAvailability(
         fakeClient({ ...baseDataset(), clinics: [clinic(false)] }),
+        DOCTOR_ID,
+        "2026-11-01",
+        { date: "2026-11-01", time: "08:00" },
+      ),
+      null,
+    );
+  });
+
+  it("returns null for an active doctor in an inactive specialty", async () => {
+    assert.equal(
+      await getDoctorAvailability(
+        fakeClient({ ...baseDataset(), specialties: [specialty(false)] }),
         DOCTOR_ID,
         "2026-11-01",
         { date: "2026-11-01", time: "08:00" },

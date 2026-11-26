@@ -8,6 +8,7 @@ type DashboardNavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  exact?: boolean;
 };
 
 type DashboardShellProps = {
@@ -57,6 +58,7 @@ function DashboardShell({
               <NavLink
                 key={item.href}
                 href={item.href}
+                exact={item.exact}
                 className={navClassName}
                 activeClassName={navActiveClassName}
                 inactiveClassName={navInactiveClassName}
@@ -103,6 +105,7 @@ function DashboardShell({
                 <NavLink
                   key={item.href}
                   href={item.href}
+                  exact={item.exact}
                   className="min-h-11 shrink-0 rounded-md border border-white/20 px-3 py-2"
                   activeClassName="border-primary bg-primary text-primary-foreground"
                   inactiveClassName="border-white/20 bg-transparent text-background/75 hover:bg-white/10 hover:text-background"

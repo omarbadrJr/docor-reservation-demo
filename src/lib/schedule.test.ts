@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { formatWorkingSchedule } from "./schedule";
+import { formatArabicTime, formatWorkingSchedule } from "./schedule";
 
 describe("formatWorkingSchedule", () => {
   it("maps weekday numbers to Arabic labels and renders times in 12-hour Egyptian Arabic", () => {
@@ -27,5 +27,24 @@ describe("formatWorkingSchedule", () => {
 
   it("returns an empty array when there are no active days", () => {
     assert.deepEqual(formatWorkingSchedule([]), []);
+  });
+});
+
+describe("formatArabicTime", () => {
+  it("formats morning times from HH:MM and HH:MM:SS", () => {
+    assert.equal(formatArabicTime("09:00"), "9:00 الصبح");
+    assert.equal(formatArabicTime("09:00:00"), "9:00 الصبح");
+  });
+
+  it("formats afternoon and evening times as بالليل", () => {
+    assert.equal(formatArabicTime("17:30"), "5:30 بالليل");
+    assert.equal(formatArabicTime("23:45:00"), "11:45 بالليل");
+  });
+
+  it("formats midnight as 12 الصبح and noon as 12 بالليل", () => {
+    assert.equal(formatArabicTime("00:00"), "12:00 الصبح");
+    assert.equal(formatArabicTime("00:15:00"), "12:15 الصبح");
+    assert.equal(formatArabicTime("12:00"), "12:00 بالليل");
+    assert.equal(formatArabicTime("12:30"), "12:30 بالليل");
   });
 });

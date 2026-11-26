@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo, Tajawal } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -36,7 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       dir="rtl"
       className={`${cairo.variable} ${tajawal.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }

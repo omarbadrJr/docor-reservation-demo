@@ -56,7 +56,7 @@ describe("BookingSlotPicker", () => {
     assert.match(html, /المواعيد المتاحة/);
     assert.match(html, /الجمعة، 4 ديسمبر 2026/);
     assert.match(html, /9:00 الصبح/);
-    assert.match(html, /5:30 بالليل/);
+    assert.match(html, /5:30 مساءً/);
 
     const morningButton = html.match(
       /<button[^>]*>[\s\S]*?9:00 الصبح[\s\S]*?<\/button>/,
@@ -65,7 +65,7 @@ describe("BookingSlotPicker", () => {
     assert.match(morningButton[0], /aria-pressed="false"/);
 
     const eveningButton = html.match(
-      /<button[^>]*>[\s\S]*?5:30 بالليل[\s\S]*?<\/button>/,
+      /<button[^>]*>[\s\S]*?5:30 مساءً[\s\S]*?<\/button>/,
     );
     assert.ok(eveningButton);
     assert.match(eveningButton[0], /aria-pressed="true"/);

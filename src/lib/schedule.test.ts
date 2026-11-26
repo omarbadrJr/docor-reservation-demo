@@ -11,17 +11,17 @@ describe("formatWorkingSchedule", () => {
     ]);
 
     assert.deepEqual(result, [
-      "الأحد: 9:00 الصبح - 5:00 بالليل",
-      "الجمعة: 10:00 الصبح - 2:00 بالليل",
+      "الأحد: 9:00 الصبح - 5:00 مساءً",
+      "الجمعة: 10:00 الصبح - 2:00 مساءً",
     ]);
   });
 
-  it("labels midnight as الصبح and noon as بالليل", () => {
+  it("labels midnight as الصبح and noon as مساءً", () => {
     assert.deepEqual(
       formatWorkingSchedule([
         { day_of_week: 3, start_time: "00:00:00", end_time: "12:00:00" },
       ]),
-      ["الأربعاء: 12:00 الصبح - 12:00 بالليل"],
+      ["الأربعاء: 12:00 الصبح - 12:00 مساءً"],
     );
   });
 
@@ -36,15 +36,15 @@ describe("formatArabicTime", () => {
     assert.equal(formatArabicTime("09:00:00"), "9:00 الصبح");
   });
 
-  it("formats afternoon and evening times as بالليل", () => {
-    assert.equal(formatArabicTime("17:30"), "5:30 بالليل");
-    assert.equal(formatArabicTime("23:45:00"), "11:45 بالليل");
+  it("formats afternoon and evening times as مساءً", () => {
+    assert.equal(formatArabicTime("17:30"), "5:30 مساءً");
+    assert.equal(formatArabicTime("23:45:00"), "11:45 مساءً");
   });
 
-  it("formats midnight as 12 الصبح and noon as 12 بالليل", () => {
+  it("formats midnight as 12 الصبح and noon as 12 مساءً", () => {
     assert.equal(formatArabicTime("00:00"), "12:00 الصبح");
     assert.equal(formatArabicTime("00:15:00"), "12:15 الصبح");
-    assert.equal(formatArabicTime("12:00"), "12:00 بالليل");
-    assert.equal(formatArabicTime("12:30"), "12:30 بالليل");
+    assert.equal(formatArabicTime("12:00"), "12:00 مساءً");
+    assert.equal(formatArabicTime("12:30"), "12:30 مساءً");
   });
 });

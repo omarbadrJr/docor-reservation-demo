@@ -19,7 +19,7 @@ export function formatArabicTime(value: string): string {
   const [hourPart, minutes] = value.split(":");
   const hours = Number(hourPart);
   const hour = hours % 12 || 12;
-  const period = hours < 12 ? "الصبح" : "بالليل";
+  const period = hours < 12 ? "الصبح" : "مساءً";
   return `${hour}:${minutes} ${period}`;
 }
 

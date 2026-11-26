@@ -36,7 +36,7 @@ describe("DoctorProfile", () => {
     assert.match(html, /شارع النيل، الدنجاوة، البحيرة/);
     assert.match(html, /عنوان العيادة/);
     assert.match(html, /150 جنيه/);
-    assert.match(html, /الأحد: 09:00 - 17:00/);
+    assert.match(html, /الأحد: 9:00 الصبح - 5:00 بالليل/);
     assert.match(html, /المواعيد المتاحة/);
     assert.match(html, /href="\/booking\?doctorId=33000000-0000-0000-0000-000000000001"/);
   });

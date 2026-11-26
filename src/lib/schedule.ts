@@ -15,13 +15,17 @@ const weekdayLabels = [
   "السبت",
 ] as const;
 
-function trimTime(value: string): string {
-  return value.slice(0, 5);
+function formatTime(value: string): string {
+  const [hourPart, minutes] = value.split(":");
+  const hours = Number(hourPart);
+  const hour = hours % 12 || 12;
+  const period = hours < 12 ? "الصبح" : "بالليل";
+  return `${hour}:${minutes} ${period}`;
 }
 
 export function formatWorkingSchedule(rows: WorkingScheduleRow[]): string[] {
   return rows.map((row) => {
     const label = weekdayLabels[row.day_of_week] ?? "يوم غير محدد";
-    return `${label}: ${trimTime(row.start_time)} - ${trimTime(row.end_time)}`;
+    return `${label}: ${formatTime(row.start_time)} - ${formatTime(row.end_time)}`;
   });
 }

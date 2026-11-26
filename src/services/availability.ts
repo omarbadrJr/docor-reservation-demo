@@ -15,8 +15,6 @@ import { getCairoNow, listDatesInMonth, type CairoNow } from "@/lib/cairo-time";
 import { getActiveClinic } from "./clinics";
 import type { CatalogClient } from "./specialties";
 
-const ACTIVE_APPOINTMENT_STATUSES = ["CONFIRMED", "CHECKED_IN"] as const;
-
 type ActiveDoctor = {
   id: string;
   clinic_id: string;
@@ -84,13 +82,11 @@ async function loadActiveAppointments(
   startDate: string,
   endDate: string,
 ) {
-  const { data, error } = await client
-    .from("appointments")
-    .select("appointment_date, start_time, end_time")
-    .eq("doctor_id", doctorId)
-    .in("status", [...ACTIVE_APPOINTMENT_STATUSES])
-    .gte("appointment_date", startDate)
-    .lte("appointment_date", endDate);
+  const { data, error } = await client.rpc("list_doctor_booked_windows", {
+    p_doctor_id: doctorId,
+    p_start_date: startDate,
+    p_end_date: endDate,
+  });
 
   if (error) {
     throw new Error("مش قادرين نجيب المواعيد المحجوزة دلوقتي، حاول تاني بعد شوية.");

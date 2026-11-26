@@ -72,7 +72,37 @@ const appointment = (
 });
 
 function fakeClient(dataset: Dataset) {
+  const activeStatuses = ["CONFIRMED", "CHECKED_IN"];
+
   const client = {
+    rpc(
+      functionName: string,
+      args: {
+        p_doctor_id: string;
+        p_start_date: string;
+        p_end_date: string;
+      },
+    ) {
+      if (functionName !== "list_doctor_booked_windows") {
+        return Promise.resolve({ data: null, error: new Error("unknown rpc") });
+      }
+
+      const data = (dataset.appointments ?? [])
+        .filter(
+          (row) =>
+            row.doctor_id === args.p_doctor_id &&
+            activeStatuses.includes(String(row.status)) &&
+            String(row.appointment_date) >= args.p_start_date &&
+            String(row.appointment_date) <= args.p_end_date,
+        )
+        .map((row) => ({
+          appointment_date: row.appointment_date,
+          start_time: row.start_time,
+          end_time: row.end_time,
+        }));
+
+      return Promise.resolve({ data, error: null });
+    },
     from(table: string) {
       const filters: Array<(row: Record<string, unknown>) => boolean> = [];
 

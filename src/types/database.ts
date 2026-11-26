@@ -279,6 +279,18 @@ export type Database = {
         };
         Returns: boolean;
       };
+      list_doctor_booked_windows: {
+        Args: {
+          p_doctor_id: string;
+          p_start_date: string;
+          p_end_date: string;
+        };
+        Returns: {
+          appointment_date: string;
+          start_time: string;
+          end_time: string;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

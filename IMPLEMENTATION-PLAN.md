@@ -25,7 +25,7 @@
 | Phase 3 | Application Foundation | Completed |
 | Phase 4 | Public Doctor Discovery | Completed |
 | Phase 5 | Scheduling and Availability | Completed |
-| Phase 6 | Appointment Booking | Not Started |
+| Phase 6 | Appointment Booking | Completed |
 | Phase 7 | Booking Management | Not Started |
 | Phase 8 | Authentication and Authorization | Not Started |
 | Phase 9 | Owner Dashboard | Not Started |

@@ -40,3 +40,12 @@ export function listDatesInMonth(month: string): string[] {
 export function dayOfWeek(date: string): number {
   return new Date(`${date}T00:00:00Z`).getUTCDay();
 }
+
+export function shiftMonth(month: string, delta: number): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const totalMonths = year * 12 + (monthNumber - 1) + delta;
+  const targetYear = Math.floor(totalMonths / 12);
+  const targetMonth = (((totalMonths % 12) + 12) % 12) + 1;
+
+  return `${String(targetYear).padStart(4, "0")}-${String(targetMonth).padStart(2, "0")}`;
+}

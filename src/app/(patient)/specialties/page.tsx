@@ -1,3 +1,5 @@
+import { io } from "next/cache";
+
 import { SpecialtyCard } from "@/components/doctors/specialty-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/state";
@@ -5,6 +7,7 @@ import { createAnonClient } from "@/lib/supabase/anon";
 import { listActiveSpecialties } from "@/services/specialties";
 
 export default async function SpecialtiesPage() {
+  await io();
   const client = createAnonClient();
   const specialties = await listActiveSpecialties(client);
 

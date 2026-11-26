@@ -31,11 +31,11 @@ Patient accounts/registration/login, OTP verification, online payments, medical 
 
 ## 4. Architecture & Folder Rules
 Follow `docs/PROJECT_STRUCTURE.md` incrementally — create folders and files only when needed (no speculative abstractions):
-- `src/app/` — Route groups `(patient)/` (`page.tsx`, `specialties/`, `doctors/`, `doctors/[id]/`, `booking/`, `my-booking/`), `(auth)/login` (upcoming), `owner/`, `receptionist/`, and server-side `api/` Route Handlers (`api/specialties`, `api/doctors`, `api/doctors/[id]`, `api/doctors/[id]/available-dates`, `api/doctors/[id]/availability`, `api/appointments`, `api/appointments/lookup`, `api/appointments/[id]/reschedule`, `api/appointments/[id]/cancel`). Keep page components thin (UI rendering and coordination only; no complex business logic). With `cacheComponents: true`, wrap dynamic server reads in `<Suspense>` boundaries so prerendering succeeds cleanly.
-- `src/components/` — Reusable UI (`ui/`, `layout/`, `doctors/`, `booking/`, `dashboard/`). Do not duplicate components across pages.
-- `src/services/` — Core business logic (`appointments.ts`, `availability.ts`, `doctors.ts`, `clinics.ts`, `specialties.ts`).
-- `src/lib/` — Shared utilities (`availability.ts`, `cairo-time.ts`, `format.ts`, `qr.ts`, `schedule.ts`, `utils.ts`), Supabase clients (`lib/supabase/`: `client.ts` browser, `server.ts` SSR/cookie, `anon.ts` public read-only, `admin.ts` server-only service-role), and Zod schemas (`lib/validations/`).
-- `src/types/` — Shared TypeScript types (`database.ts`, `catalog.ts`, `availability.ts`, `booking.ts`).
+- `src/app/` — Route groups `(patient)/` (`page.tsx`, `specialties/`, `doctors/`, `doctors/[id]/`, `booking/`, `my-booking/`), `(auth)/login`, `owner/`, `receptionist/`, server-side `api/` Route Handlers (`api/specialties`, `api/doctors`, `api/doctors/[id]`, `api/doctors/[id]/available-dates`, `api/doctors/[id]/availability`, `api/appointments`, `api/appointments/lookup`, `api/appointments/[id]/reschedule`, `api/appointments/[id]/cancel`, `api/admin/login`, `api/admin/logout`, `api/owner/me`, `api/receptionist/me`), and `src/proxy.ts` (Next.js 16 auth proxy). Keep page components thin (UI rendering and coordination only; no complex business logic). With `cacheComponents: true`, wrap dynamic server reads in `<Suspense>` boundaries so prerendering succeeds cleanly.
+- `src/components/` — Reusable UI (`ui/`, `layout/`, `auth/`, `doctors/`, `booking/`, `dashboard/`). Do not duplicate components across pages.
+- `src/services/` — Core business logic (`appointments.ts`, `auth.ts`, `availability.ts`, `doctors.ts`, `clinics.ts`, `specialties.ts`).
+- `src/lib/` — Shared utilities (`availability.ts`, `cairo-time.ts`, `format.ts`, `qr.ts`, `schedule.ts`, `utils.ts`), auth helpers (`lib/auth/`: `guards.ts`, `proxy.ts`, `rate-limit.ts`), Supabase clients (`lib/supabase/`: `client.ts` browser, `server.ts` SSR/cookie, `anon.ts` public read-only, `admin.ts` server-only service-role), and Zod schemas (`lib/validations/` including `auth.ts`).
+- `src/types/` — Shared TypeScript types (`database.ts`, `auth.ts`, `catalog.ts`, `availability.ts`, `booking.ts`).
 - `supabase/` — SQL migrations (`migrations/0001`–`0007`: catalog, scheduling, appointments + `btree_gist` exclusion, `admin_profiles` + RLS, transactional booking RPCs, doctor photos storage, hardened booking RPCs) and fictional demo seed data (`seed.sql`).
 
 ## 5. Non-Negotiable Domain & Security Invariants
@@ -64,7 +64,7 @@ Follow `docs/PROJECT_STRUCTURE.md` incrementally — create folders and files on
 - **Usability:** Mobile-first, uncluttered, large readable text, large touch-friendly buttons, minimal steps, accessible contrast, never rely on color alone to convey status, and clear loading/empty/success/error states. Do not invent extra booking steps or unnecessary dialogs.
 
 ## 7. Implementation & Verification Workflow
-- Follow the phase-by-phase plan in `IMPLEMENTATION-PLAN.md` (aligned with `SRS.md` §11), checking its Phase Tracker for current progress (Phases 1–7 completed; Phases 8–12 remaining) and verifying each phase's acceptance criteria plus all 10 acceptance criteria in `SRS.md` §10 before advancing.
+- Follow the phase-by-phase plan in `IMPLEMENTATION-PLAN.md` (aligned with `SRS.md` §11), checking its Phase Tracker for current progress (Phases 1–8 completed; Phases 9–12 remaining) and verifying each phase's acceptance criteria plus all 10 acceptance criteria in `SRS.md` §10 before advancing.
 - Keep all seed/demo records clearly marked as fictional (`SRS.md` §12).
 - Keep edits focused and minimal; avoid touching unrelated files.
 - **Branching workflow:** Use feature/fix branches (`feat/...`, `fix/...`) merged into `dev` via PR, and merge `dev` into `main` via PR (unless the user explicitly asks to push directly to `dev`).

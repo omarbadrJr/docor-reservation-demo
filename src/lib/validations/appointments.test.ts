@@ -6,7 +6,13 @@ import type { z } from "zod";
 import {
   bookingFormSchema,
   normalizePhoneNumber,
+  normalizeReferenceNumber,
+  parseCancelAppointmentInput,
   parseCreateAppointmentInput,
+  parseLookupQuery,
+  parseRescheduleAppointmentInput,
+  phoneLookupSchema,
+  referenceLookupSchema,
   type BookingFormValues,
 } from "./appointments";
 
@@ -325,6 +331,175 @@ describe("parseCreateAppointmentInput", () => {
           startTime: "المعاد غير صحيح.",
           patientName: "الاسم طويل أوي، اختصره شوية.",
           patientPhone: "اكتب رقم موبايل صح (أرقام بس، من 7 لـ 20 رقم).",
+        },
+      },
+    );
+  });
+});
+
+const VALID_BOOKING_ID = "44000000-0000-0000-0000-000000000001";
+
+describe("normalizeReferenceNumber", () => {
+  it("normalizes Arabic-Indic digits, whitespace, and lowercase letters", () => {
+    assert.equal(normalizeReferenceNumber("  dr - ٨k٢٩p٤ "), "DR-8K29P4");
+    assert.equal(normalizeReferenceNumber("dr-abc123"), "DR-ABC123");
+  });
+});
+
+describe("lookup schemas", () => {
+  it("validates referenceLookupSchema and phoneLookupSchema", () => {
+    assert.equal(
+      referenceLookupSchema.safeParse({ reference: "dr-8k29p4" }).success,
+      true,
+    );
+    assert.equal(
+      referenceLookupSchema.safeParse({ reference: "BAD" }).success,
+      false,
+    );
+    assert.equal(
+      phoneLookupSchema.safeParse({ phone: "٠١٠-١٢٣٤-٥٦٧٨" }).success,
+      true,
+    );
+    assert.equal(phoneLookupSchema.safeParse({ phone: "123" }).success, false);
+  });
+});
+
+describe("parseLookupQuery", () => {
+  it("accepts reference lookup and normalizes it", () => {
+    const result = parseLookupQuery(
+      new URLSearchParams("reference=%20dr-٨k29p4%20"),
+    );
+    assert.deepEqual(result, {
+      success: true,
+      data: { type: "reference", reference: "DR-8K29P4" },
+    });
+  });
+
+  it("accepts phone lookup and normalizes Arabic digits and dashes", () => {
+    const result = parseLookupQuery(
+      new URLSearchParams("phone=%20٠١٠-١٢٣٤-٥٦٧٨%20"),
+    );
+    assert.deepEqual(result, {
+      success: true,
+      data: { type: "phone", phone: "01012345678" },
+    });
+  });
+
+  it("rejects missing, ambiguous, duplicate, or invalid lookup queries", () => {
+    assert.deepEqual(parseLookupQuery(new URLSearchParams()), {
+      success: false,
+      error: "اكتب رقم الحجز أو رقم الموبايل عشان ندور عليه.",
+      fieldErrors: {},
+    });
+
+    assert.deepEqual(
+      parseLookupQuery(
+        new URLSearchParams("reference=DR-8K29P4&phone=01012345678"),
+      ),
+      {
+        success: false,
+        error: "اختار طريقة بحث واحدة: يا إما رقم الحجز أو رقم الموبايل.",
+        fieldErrors: {},
+      },
+    );
+
+    assert.deepEqual(
+      parseLookupQuery(new URLSearchParams("reference=DR-123")),
+      {
+        success: false,
+        error: "اكتب رقم الحجز صح (مثلاً DR-8K29P4).",
+        fieldErrors: { reference: "اكتب رقم الحجز صح (مثلاً DR-8K29P4)." },
+      },
+    );
+
+    assert.deepEqual(parseLookupQuery(new URLSearchParams("phone=12345")), {
+      success: false,
+      error: "اكتب رقم موبايل صح (أرقام بس، من 7 لـ 20 رقم).",
+      fieldErrors: {
+        phone: "اكتب رقم موبايل صح (أرقام بس، من 7 لـ 20 رقم).",
+      },
+    });
+  });
+});
+
+describe("parseCancelAppointmentInput", () => {
+  it("accepts valid ownership input and normalizes reference and phone", () => {
+    assert.deepEqual(
+      parseCancelAppointmentInput(VALID_BOOKING_ID, {
+        referenceNumber: " dr-8k29p4 ",
+        patientPhone: "٠١٠ ١٢٣٤ ٥٦٧٨",
+      }),
+      {
+        success: true,
+        data: {
+          appointmentId: VALID_BOOKING_ID,
+          referenceNumber: "DR-8K29P4",
+          patientPhone: "01012345678",
+        },
+      },
+    );
+  });
+
+  it("rejects malformed payloads and invalid ownership fields", () => {
+    assert.deepEqual(parseCancelAppointmentInput(VALID_BOOKING_ID, []), {
+      success: false,
+      error: "البيانات مش مظبوطة، راجعها وحاول تاني.",
+      fieldErrors: {},
+    });
+
+    assert.deepEqual(
+      parseCancelAppointmentInput("bad-id", {
+        referenceNumber: "BAD",
+        patientPhone: "12",
+      }),
+      {
+        success: false,
+        error: "البيانات مش مظبوطة، راجعها وحاول تاني.",
+        fieldErrors: {
+          appointmentId: "رقم تعريف الحجز غير صحيح.",
+          referenceNumber: "اكتب رقم الحجز صح (مثلاً DR-8K29P4).",
+          patientPhone: "اكتب رقم موبايل صح (أرقام بس، من 7 لـ 20 رقم).",
+        },
+      },
+    );
+  });
+});
+
+describe("parseRescheduleAppointmentInput", () => {
+  it("accepts valid reschedule payload and normalizes fields", () => {
+    assert.deepEqual(
+      parseRescheduleAppointmentInput(VALID_BOOKING_ID, {
+        referenceNumber: "dr-8k29p4",
+        patientPhone: "٠١٠١٢٣٤٥٦٧٨",
+        appointmentDate: "2026-12-10",
+        startTime: "14:30",
+      }),
+      {
+        success: true,
+        data: {
+          appointmentId: VALID_BOOKING_ID,
+          referenceNumber: "DR-8K29P4",
+          patientPhone: "01012345678",
+          appointmentDate: "2026-12-10",
+          startTime: "14:30",
+        },
+      },
+    );
+  });
+
+  it("rejects invalid date, startTime, and ownership fields", () => {
+    assert.deepEqual(
+      parseRescheduleAppointmentInput(VALID_BOOKING_ID, {
+        referenceNumber: "DR-8K29P4",
+        patientPhone: "01012345678",
+        appointmentDate: "2026-02-30",
+        startTime: "09:30",
+      }),
+      {
+        success: false,
+        error: "التاريخ غير صحيح.",
+        fieldErrors: {
+          appointmentDate: "التاريخ غير صحيح.",
         },
       },
     );

@@ -3,7 +3,13 @@ import { describe, it } from "node:test";
 
 import type { Appointment, AppointmentStatus } from "@/types/database";
 
-import { BookingServiceError, createAppointment } from "./appointments";
+import {
+  BookingServiceError,
+  cancelAppointment,
+  createAppointment,
+  lookupAppointments,
+  rescheduleAppointment,
+} from "./appointments";
 
 const DOCTOR_ID = "33000000-0000-0000-0000-000000000001";
 const CLINIC_ID = "11000000-0000-0000-0000-000000000001";
@@ -423,6 +429,437 @@ describe("createAppointment", () => {
         err instanceof BookingServiceError &&
         err.status === 500 &&
         err.code === "INTERNAL_ERROR",
+    );
+  });
+});
+
+const BOOKING_ID = "44000000-0000-0000-0000-000000000001";
+const TEST_NOW = { date: "2026-11-26", time: "10:00" };
+const stubQr = async (token: string) => `data:image/png;base64,qr:${token}`;
+
+describe("lookupAppointments", () => {
+  it("looks up a single booking by reference number and computes modifiability", async () => {
+    const dataset = baseDataset();
+    dataset.appointments.push(
+      appointmentRow({
+        id: BOOKING_ID,
+        reference_number: "DR-8K29P4",
+        appointment_date: "2026-12-01",
+        start_time: "09:00:00",
+        end_time: "09:30:00",
+        status: "CONFIRMED",
+      }),
+    );
+
+    const { client } = fakeClient(dataset);
+    const result = await lookupAppointments(
+      client,
+      { type: "reference", reference: "DR-8K29P4" },
+      { now: TEST_NOW, generateQr: stubQr },
+    );
+
+    assert.equal(result.todayDate, "2026-11-26");
+    assert.equal(result.bookings.length, 1);
+    assert.equal(result.bookings[0].referenceNumber, "DR-8K29P4");
+    assert.equal(result.bookings[0].startTime, "09:00");
+    assert.equal(result.bookings[0].endTime, "09:30");
+    assert.equal(result.bookings[0].isDoctorActive, true);
+    assert.equal(result.bookings[0].isPast, false);
+    assert.equal(result.bookings[0].canReschedule, true);
+    assert.equal(result.bookings[0].canCancel, true);
+  });
+
+  it("returns all bookings for a phone number sorted upcoming-first and preserves inactive doctor details", async () => {
+    const dataset = baseDataset();
+    dataset.doctors = [doctorRow(false)];
+    dataset.appointments.push(
+      appointmentRow({
+        id: "44000000-0000-0000-0000-000000000010",
+        reference_number: "DR-PAST01",
+        appointment_date: "2026-11-20",
+        start_time: "11:00:00",
+        end_time: "11:30:00",
+        status: "COMPLETED",
+      }),
+      appointmentRow({
+        id: "44000000-0000-0000-0000-000000000011",
+        reference_number: "DR-FUT002",
+        appointment_date: "2026-12-05",
+        start_time: "10:00:00",
+        end_time: "10:30:00",
+        status: "CONFIRMED",
+      }),
+      appointmentRow({
+        id: "44000000-0000-0000-0000-000000000012",
+        reference_number: "DR-FUT001",
+        appointment_date: "2026-12-02",
+        start_time: "09:00:00",
+        end_time: "09:30:00",
+        status: "CONFIRMED",
+      }),
+      appointmentRow({
+        id: "44000000-0000-0000-0000-000000000013",
+        reference_number: "DR-CANC01",
+        appointment_date: "2026-12-10",
+        start_time: "12:00:00",
+        end_time: "12:30:00",
+        status: "CANCELLED",
+      }),
+    );
+
+    const { client } = fakeClient(dataset);
+    const result = await lookupAppointments(
+      client,
+      { type: "phone", phone: "01012345678" },
+      { now: TEST_NOW, generateQr: stubQr },
+    );
+
+    assert.deepEqual(
+      result.bookings.map((b) => b.referenceNumber),
+      ["DR-FUT001", "DR-FUT002", "DR-CANC01", "DR-PAST01"],
+    );
+    assert.equal(result.bookings[0].isDoctorActive, false);
+    assert.equal(result.bookings[0].canReschedule, false);
+    assert.equal(result.bookings[0].canCancel, true);
+    assert.equal(result.bookings[2].canCancel, false);
+    assert.equal(result.bookings[3].isPast, true);
+  });
+});
+
+describe("rescheduleAppointment", () => {
+  it("atomically updates booking via reschedule_appointment RPC", async () => {
+    const dataset = baseDataset();
+    dataset.appointments.push(
+      appointmentRow({
+        id: BOOKING_ID,
+        appointment_date: "2099-05-03",
+        start_time: "09:00:00",
+        end_time: "09:30:00",
+        status: "CONFIRMED",
+      }),
+    );
+
+    const { client, rpcCalls } = fakeClient(dataset, (_fn, args) => ({
+      data: appointmentRow({
+        id: BOOKING_ID,
+        appointment_date: String(args.p_date),
+        start_time: `${String(args.p_start)}:00`,
+        end_time: "10:00:00",
+        status: "CONFIRMED",
+      }),
+      error: null,
+    }));
+
+    const result = await rescheduleAppointment(
+      client,
+      {
+        appointmentId: BOOKING_ID,
+        referenceNumber: "DR-8K29P4",
+        patientPhone: "01012345678",
+        appointmentDate: APPOINTMENT_DATE,
+        startTime: "09:30",
+      },
+      { now: TEST_NOW, generateQr: stubQr },
+    );
+
+    assert.equal(rpcCalls.length, 1);
+    assert.deepEqual(rpcCalls[0], {
+      fn: "reschedule_appointment",
+      args: {
+        p_appointment_id: BOOKING_ID,
+        p_date: APPOINTMENT_DATE,
+        p_start: "09:30",
+        p_reference_number: "DR-8K29P4",
+        p_patient_phone: "01012345678",
+      },
+    });
+    assert.equal(result.booking.appointmentDate, APPOINTMENT_DATE);
+    assert.equal(result.booking.startTime, "09:30");
+    assert.equal(result.booking.endTime, "10:00");
+  });
+
+  it("rejects picking the exact same date and slot without calling RPC", async () => {
+    const dataset = baseDataset();
+    dataset.appointments.push(appointmentRow({ id: BOOKING_ID }));
+    const { client, rpcCalls } = fakeClient(dataset);
+
+    await assert.rejects(
+      () =>
+        rescheduleAppointment(
+          client,
+          {
+            appointmentId: BOOKING_ID,
+            referenceNumber: "DR-8K29P4",
+            patientPhone: "01012345678",
+            appointmentDate: APPOINTMENT_DATE,
+            startTime: "09:00",
+          },
+          { now: TEST_NOW, generateQr: stubQr },
+        ),
+      (err: unknown) =>
+        err instanceof BookingServiceError &&
+        err.status === 400 &&
+        err.code === "VALIDATION_ERROR",
+    );
+    assert.equal(rpcCalls.length, 0);
+  });
+
+  it("maps concurrent slot conflict during reschedule to 409 SLOT_UNAVAILABLE with refreshed availability", async () => {
+    const dataset = baseDataset();
+    dataset.appointments.push(
+      appointmentRow({
+        id: BOOKING_ID,
+        appointment_date: "2099-05-10",
+        start_time: "09:00:00",
+        end_time: "09:30:00",
+      }),
+    );
+
+    const { client } = fakeClient(dataset, (_fn, _args, _attempt, db) => {
+      db.appointments.push(
+        appointmentRow({
+          id: "44000000-0000-0000-0000-000000000099",
+          appointment_date: APPOINTMENT_DATE,
+          start_time: "09:00:00",
+          end_time: "09:30:00",
+          status: "CONFIRMED",
+        }),
+      );
+      return {
+        data: null,
+        error: { code: "23P01", message: "appointments_no_active_overlap" },
+      };
+    });
+
+    await assert.rejects(
+      () =>
+        rescheduleAppointment(
+          client,
+          {
+            appointmentId: BOOKING_ID,
+            referenceNumber: "DR-8K29P4",
+            patientPhone: "01012345678",
+            appointmentDate: APPOINTMENT_DATE,
+            startTime: "09:00",
+          },
+          { now: TEST_NOW, generateQr: stubQr },
+        ),
+      (err: unknown) => {
+        assert.ok(err instanceof BookingServiceError);
+        assert.equal(err.status, 409);
+        assert.equal(err.code, "SLOT_UNAVAILABLE");
+        assert.deepEqual(err.availability, {
+          date: APPOINTMENT_DATE,
+          state: "AVAILABLE",
+          slots: [{ start: "09:30", end: "10:00" }],
+        });
+        return true;
+      },
+    );
+  });
+
+  it("rejects inactive doctors and non-modifiable/past/missing bookings", async () => {
+    const inactiveDocDb = baseDataset();
+    inactiveDocDb.doctors = [doctorRow(false)];
+    inactiveDocDb.appointments.push(
+      appointmentRow({ id: BOOKING_ID, appointment_date: "2099-05-10" }),
+    );
+    const { client: inactiveDocClient, rpcCalls } = fakeClient(inactiveDocDb);
+    await assert.rejects(
+      () =>
+        rescheduleAppointment(
+          inactiveDocClient,
+          {
+            appointmentId: BOOKING_ID,
+            referenceNumber: "DR-8K29P4",
+            patientPhone: "01012345678",
+            appointmentDate: APPOINTMENT_DATE,
+            startTime: "09:30",
+          },
+          { now: TEST_NOW, generateQr: stubQr },
+        ),
+      (err: unknown) =>
+        err instanceof BookingServiceError &&
+        err.status === 404 &&
+        err.code === "DOCTOR_UNAVAILABLE",
+    );
+    assert.equal(rpcCalls.length, 0);
+
+    for (const status of ["CANCELLED", "CHECKED_IN", "COMPLETED", "NO_SHOW"] as const) {
+      const db = baseDataset();
+      db.appointments.push(appointmentRow({ id: BOOKING_ID, status }));
+      const { client } = fakeClient(db);
+      await assert.rejects(
+        () =>
+          rescheduleAppointment(
+            client,
+            {
+              appointmentId: BOOKING_ID,
+              referenceNumber: "DR-8K29P4",
+              patientPhone: "01012345678",
+              appointmentDate: APPOINTMENT_DATE,
+              startTime: "09:30",
+            },
+            { now: TEST_NOW, generateQr: stubQr },
+          ),
+        (err: unknown) =>
+          err instanceof BookingServiceError &&
+          err.status === 409 &&
+          err.code === "BOOKING_NOT_MODIFIABLE",
+      );
+    }
+
+    const pastDb = baseDataset();
+    pastDb.appointments.push(
+      appointmentRow({
+        id: BOOKING_ID,
+        appointment_date: "2026-11-26",
+        start_time: "10:00:00",
+        status: "CONFIRMED",
+      }),
+    );
+    const { client: pastClient } = fakeClient(pastDb);
+    await assert.rejects(
+      () =>
+        rescheduleAppointment(
+          pastClient,
+          {
+            appointmentId: BOOKING_ID,
+            referenceNumber: "DR-8K29P4",
+            patientPhone: "01012345678",
+            appointmentDate: APPOINTMENT_DATE,
+            startTime: "09:30",
+          },
+          { now: TEST_NOW, generateQr: stubQr },
+        ),
+      (err: unknown) =>
+        err instanceof BookingServiceError &&
+        err.status === 409 &&
+        err.code === "BOOKING_NOT_MODIFIABLE",
+    );
+
+    const { client: missingClient } = fakeClient(baseDataset());
+    await assert.rejects(
+      () =>
+        rescheduleAppointment(
+          missingClient,
+          {
+            appointmentId: BOOKING_ID,
+            referenceNumber: "DR-8K29P4",
+            patientPhone: "01012345678",
+            appointmentDate: APPOINTMENT_DATE,
+            startTime: "09:30",
+          },
+          { now: TEST_NOW, generateQr: stubQr },
+        ),
+      (err: unknown) =>
+        err instanceof BookingServiceError &&
+        err.status === 404 &&
+        err.code === "BOOKING_NOT_FOUND",
+    );
+  });
+});
+
+describe("cancelAppointment", () => {
+  it("cancels an upcoming confirmed appointment via cancel_appointment RPC", async () => {
+    const dataset = baseDataset();
+    dataset.appointments.push(appointmentRow({ id: BOOKING_ID }));
+
+    const { client, rpcCalls } = fakeClient(dataset, () => ({
+      data: appointmentRow({ id: BOOKING_ID, status: "CANCELLED" }),
+      error: null,
+    }));
+
+    const result = await cancelAppointment(
+      client,
+      {
+        appointmentId: BOOKING_ID,
+        referenceNumber: "DR-8K29P4",
+        patientPhone: "01012345678",
+      },
+      { now: TEST_NOW, generateQr: stubQr },
+    );
+
+    assert.equal(rpcCalls.length, 1);
+    assert.deepEqual(rpcCalls[0], {
+      fn: "cancel_appointment",
+      args: {
+        p_appointment_id: BOOKING_ID,
+        p_reference_number: "DR-8K29P4",
+        p_patient_phone: "01012345678",
+      },
+    });
+    assert.equal(result.booking.status, "CANCELLED");
+    assert.equal(result.booking.canCancel, false);
+    assert.equal(result.booking.canReschedule, false);
+  });
+
+  it("rejects missing, already cancelled, checked-in, completed, and past bookings", async () => {
+    const { client: missingClient } = fakeClient(baseDataset());
+    await assert.rejects(
+      () =>
+        cancelAppointment(
+          missingClient,
+          {
+            appointmentId: BOOKING_ID,
+            referenceNumber: "DR-8K29P4",
+            patientPhone: "01012345678",
+          },
+          { now: TEST_NOW, generateQr: stubQr },
+        ),
+      (err: unknown) =>
+        err instanceof BookingServiceError &&
+        err.status === 404 &&
+        err.code === "BOOKING_NOT_FOUND",
+    );
+
+    for (const status of ["CANCELLED", "CHECKED_IN", "COMPLETED", "NO_SHOW"] as const) {
+      const db = baseDataset();
+      db.appointments.push(appointmentRow({ id: BOOKING_ID, status }));
+      const { client, rpcCalls } = fakeClient(db);
+      await assert.rejects(
+        () =>
+          cancelAppointment(
+            client,
+            {
+              appointmentId: BOOKING_ID,
+              referenceNumber: "DR-8K29P4",
+              patientPhone: "01012345678",
+            },
+            { now: TEST_NOW, generateQr: stubQr },
+          ),
+        (err: unknown) =>
+          err instanceof BookingServiceError &&
+          err.status === 409 &&
+          err.code === "BOOKING_NOT_MODIFIABLE",
+      );
+      assert.equal(rpcCalls.length, 0);
+    }
+
+    const pastDb = baseDataset();
+    pastDb.appointments.push(
+      appointmentRow({
+        id: BOOKING_ID,
+        appointment_date: "2026-11-25",
+        status: "CONFIRMED",
+      }),
+    );
+    const { client: pastClient } = fakeClient(pastDb);
+    await assert.rejects(
+      () =>
+        cancelAppointment(
+          pastClient,
+          {
+            appointmentId: BOOKING_ID,
+            referenceNumber: "DR-8K29P4",
+            patientPhone: "01012345678",
+          },
+          { now: TEST_NOW, generateQr: stubQr },
+        ),
+      (err: unknown) =>
+        err instanceof BookingServiceError &&
+        err.status === 409 &&
+        err.code === "BOOKING_NOT_MODIFIABLE",
     );
   });
 });

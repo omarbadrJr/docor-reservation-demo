@@ -425,6 +425,21 @@ describe("OwnerDoctorsManager", () => {
     assert.match(html, /<strong[^>]*>0<\/strong>/);
   });
 
+  it("renders empty state cleanly even when clinic and specialty options are empty", () => {
+    const html = renderWithoutWarnings(
+      <OwnerDoctorsManager
+        initialDoctors={[]}
+        options={{ clinics: [], specialties: [] }}
+      />,
+    );
+
+    assert.match(html, /الدكاترة/);
+    assert.match(html, /إضافة دكتور جديد/);
+    assert.match(html, /مفيش دكاترة متسجلين لسه/);
+    assert.match(html, /كل العيادات/);
+    assert.match(html, /كل التخصصات/);
+  });
+
   it("renders populated doctor cards with fee, slot duration, inactive warnings, and schedule links", () => {
     const html = renderWithoutWarnings(
       <OwnerDoctorsManager

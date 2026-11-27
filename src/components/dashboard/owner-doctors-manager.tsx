@@ -47,15 +47,54 @@ import { EmptyState } from "@/components/ui/state";
 import { Textarea } from "@/components/ui/textarea";
 import { formatConsultationFee, formatExperienceYears } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { parseCreateDoctorInput } from "@/lib/validations/owner";
-import type { OwnerDoctorFormOptions } from "@/services/owner-doctors";
-import type { OwnerDoctor, OwnerErrorResponse } from "@/types/owner";
+import {
+  parseCreateClinicInput,
+  parseCreateDoctorInput,
+  parseCreateSpecialtyInput,
+} from "@/lib/validations/owner";
+import type {
+  OwnerDoctorFormOption,
+  OwnerDoctorFormOptions,
+} from "@/services/owner-doctors";
+import type {
+  OwnerClinic,
+  OwnerDoctor,
+  OwnerErrorResponse,
+  OwnerSpecialty,
+} from "@/types/owner";
 
 const SLOT_DURATION_PRESETS = [15, 20, 30, 45, 60] as const;
+
+const ADD_NEW_CLINIC_VALUE = "__ADD_NEW_CLINIC__";
+const ADD_NEW_SPECIALTY_VALUE = "__ADD_NEW_SPECIALTY__";
 
 const DEFAULT_SAVE_ERROR = "مقدرناش نحفظ بيانات الدكتور دلوقتي، حاول تاني.";
 const DEFAULT_TOGGLE_ERROR = "مقدرناش نغيّر حالة الدكتور دلوقتي، حاول تاني.";
 const DEFAULT_UPLOAD_ERROR = "مقدرناش نرفع صورة الدكتور دلوقتي، حاول تاني.";
+const DEFAULT_INLINE_SAVE_ERROR =
+  "حصلت مشكلة في الاتصال، اتأكد من الإنترنت وحاول تاني.";
+
+type QuickAddClinicFormState = {
+  name: string;
+  address: string;
+  phone: string;
+};
+
+type QuickAddSpecialtyFormState = {
+  name: string;
+  description: string;
+};
+
+const EMPTY_CLINIC_FORM: QuickAddClinicFormState = {
+  name: "",
+  address: "",
+  phone: "",
+};
+
+const EMPTY_SPECIALTY_FORM: QuickAddSpecialtyFormState = {
+  name: "",
+  description: "",
+};
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -105,6 +144,20 @@ function formatFeeInputValue(fee: string): string {
 
 function sortDoctorsByName(doctors: OwnerDoctor[]): OwnerDoctor[] {
   return [...doctors].sort((a, b) => a.fullName.localeCompare(b.fullName, "ar"));
+}
+
+function sortOptionsByName(
+  items: OwnerDoctorFormOption[],
+): OwnerDoctorFormOption[] {
+  return [...items].sort((a, b) => a.name.localeCompare(b.name, "ar"));
+}
+
+function mergeSavedOption(
+  current: OwnerDoctorFormOption[],
+  saved: OwnerDoctorFormOption,
+): OwnerDoctorFormOption[] {
+  const withoutExisting = current.filter((item) => item.id !== saved.id);
+  return sortOptionsByName([...withoutExisting, saved]);
 }
 
 function buildEmptyFormState(options: OwnerDoctorFormOptions): DoctorFormState {
@@ -205,6 +258,19 @@ export function OwnerDoctorsManager({
     setDoctors(sortDoctorsByName(initialDoctors));
   }
 
+  const [prevOptions, setPrevOptions] = useState(options);
+  const [clinicOptions, setClinicOptions] = useState<OwnerDoctorFormOption[]>(
+    () => sortOptionsByName(options.clinics),
+  );
+  const [specialtyOptions, setSpecialtyOptions] = useState<
+    OwnerDoctorFormOption[]
+  >(() => sortOptionsByName(options.specialties));
+  if (options !== prevOptions) {
+    setPrevOptions(options);
+    setClinicOptions(sortOptionsByName(options.clinics));
+    setSpecialtyOptions(sortOptionsByName(options.specialties));
+  }
+
   const [searchQuery, setSearchQuery] = useState("");
   const [clinicFilter, setClinicFilter] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("");
@@ -223,6 +289,29 @@ export function OwnerDoctorsManager({
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
 
+  const [isAddingClinic, setIsAddingClinic] = useState(false);
+  const [newClinicForm, setNewClinicForm] =
+    useState<QuickAddClinicFormState>(EMPTY_CLINIC_FORM);
+  const [newClinicFieldErrors, setNewClinicFieldErrors] = useState<
+    Record<string, string>
+  >({});
+  const [newClinicError, setNewClinicError] = useState<string | null>(null);
+  const [isSavingClinic, setIsSavingClinic] = useState(false);
+
+  const [isAddingSpecialty, setIsAddingSpecialty] = useState(false);
+  const [newSpecialtyForm, setNewSpecialtyForm] =
+    useState<QuickAddSpecialtyFormState>(EMPTY_SPECIALTY_FORM);
+  const [newSpecialtyFieldErrors, setNewSpecialtyFieldErrors] = useState<
+    Record<string, string>
+  >({});
+  const [newSpecialtyError, setNewSpecialtyError] = useState<string | null>(
+    null,
+  );
+  const [isSavingSpecialty, setIsSavingSpecialty] = useState(false);
+  const [inlineCreatedNotice, setInlineCreatedNotice] = useState<string | null>(
+    null,
+  );
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -235,6 +324,17 @@ export function OwnerDoctorsManager({
       setPhotoError(null);
       setIsSubmitting(false);
       setIsUploadingPhoto(false);
+      setIsAddingClinic(false);
+      setNewClinicForm(EMPTY_CLINIC_FORM);
+      setNewClinicFieldErrors({});
+      setNewClinicError(null);
+      setIsSavingClinic(false);
+      setIsAddingSpecialty(false);
+      setNewSpecialtyForm(EMPTY_SPECIALTY_FORM);
+      setNewSpecialtyFieldErrors({});
+      setNewSpecialtyError(null);
+      setIsSavingSpecialty(false);
+      setInlineCreatedNotice(null);
       setTogglingDoctorId(null);
       setNotice(null);
       if (fileInput) {
@@ -250,6 +350,11 @@ export function OwnerDoctorsManager({
   const fullNameInputId = useId();
   const clinicSelectId = useId();
   const specialtySelectId = useId();
+  const newClinicNameId = useId();
+  const newClinicAddressId = useId();
+  const newClinicPhoneId = useId();
+  const newSpecialtyNameId = useId();
+  const newSpecialtyDescriptionId = useId();
   const feeInputId = useId();
   const slotInputId = useId();
   const experienceInputId = useId();
@@ -296,12 +401,24 @@ export function OwnerDoctorsManager({
   }, [doctors, searchQuery, clinicFilter, specialtyFilter, statusFilter]);
 
   const missingDependencies =
-    options.clinics.length === 0 || options.specialties.length === 0;
+    clinicOptions.length === 0 || specialtyOptions.length === 0;
 
   function resetFileInput() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  }
+
+  function resetInlineAddStates() {
+    setIsAddingClinic(false);
+    setNewClinicForm(EMPTY_CLINIC_FORM);
+    setNewClinicFieldErrors({});
+    setNewClinicError(null);
+    setIsAddingSpecialty(false);
+    setNewSpecialtyForm(EMPTY_SPECIALTY_FORM);
+    setNewSpecialtyFieldErrors({});
+    setNewSpecialtyError(null);
+    setInlineCreatedNotice(null);
   }
 
   function clearFilters() {
@@ -313,10 +430,16 @@ export function OwnerDoctorsManager({
 
   function openCreateDialog() {
     setEditingDoctor(null);
-    setFormValues(buildEmptyFormState(options));
+    setFormValues(
+      buildEmptyFormState({
+        clinics: clinicOptions,
+        specialties: specialtyOptions,
+      }),
+    );
     setFieldErrors({});
     setFormError(null);
     setPhotoError(null);
+    resetInlineAddStates();
     resetFileInput();
     setIsDialogOpen(true);
   }
@@ -327,12 +450,18 @@ export function OwnerDoctorsManager({
     setFieldErrors({});
     setFormError(null);
     setPhotoError(null);
+    resetInlineAddStates();
     resetFileInput();
     setIsDialogOpen(true);
   }
 
   function handleDialogOpenChange(nextOpen: boolean) {
-    if (isSubmitting || isUploadingPhoto) {
+    if (
+      isSubmitting ||
+      isUploadingPhoto ||
+      isSavingClinic ||
+      isSavingSpecialty
+    ) {
       return;
     }
     setIsDialogOpen(nextOpen);
@@ -340,6 +469,7 @@ export function OwnerDoctorsManager({
       setFormError(null);
       setFieldErrors({});
       setPhotoError(null);
+      resetInlineAddStates();
       resetFileInput();
     }
   }
@@ -413,9 +543,199 @@ export function OwnerDoctorsManager({
     resetFileInput();
   }
 
+  function handleClinicSelectChange(value: string) {
+    if (value === ADD_NEW_CLINIC_VALUE) {
+      setIsAddingClinic(true);
+      setNewClinicFieldErrors({});
+      setNewClinicError(null);
+      setInlineCreatedNotice(null);
+      if (formError) {
+        setFormError(null);
+      }
+      return;
+    }
+
+    setIsAddingClinic(false);
+    setNewClinicFieldErrors({});
+    setNewClinicError(null);
+    updateField("clinicId", value);
+  }
+
+  function handleSpecialtySelectChange(value: string) {
+    if (value === ADD_NEW_SPECIALTY_VALUE) {
+      setIsAddingSpecialty(true);
+      setNewSpecialtyFieldErrors({});
+      setNewSpecialtyError(null);
+      setInlineCreatedNotice(null);
+      if (formError) {
+        setFormError(null);
+      }
+      return;
+    }
+
+    setIsAddingSpecialty(false);
+    setNewSpecialtyFieldErrors({});
+    setNewSpecialtyError(null);
+    updateField("specialtyId", value);
+  }
+
+  async function handleSaveNewClinic() {
+    if (isSavingClinic || isSubmitting) {
+      return;
+    }
+
+    setNewClinicFieldErrors({});
+    setNewClinicError(null);
+
+    const parsed = parseCreateClinicInput({
+      name: newClinicForm.name,
+      address: newClinicForm.address,
+      phone: newClinicForm.phone,
+      isActive: true,
+    });
+
+    if (!parsed.success) {
+      setNewClinicFieldErrors(parsed.fieldErrors);
+      setNewClinicError(parsed.message);
+      return;
+    }
+
+    setIsSavingClinic(true);
+    try {
+      const response = await fetch("/api/owner/clinics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
+
+      if (!response.ok) {
+        const errorBody = await parseJsonSafe<OwnerErrorResponse>(response);
+        setNewClinicFieldErrors(errorBody?.fieldErrors ?? {});
+        setNewClinicError(errorBody?.error ?? DEFAULT_INLINE_SAVE_ERROR);
+        return;
+      }
+
+      const data = await parseJsonSafe<{ clinic?: OwnerClinic }>(response);
+      if (!data?.clinic) {
+        setNewClinicError(DEFAULT_INLINE_SAVE_ERROR);
+        return;
+      }
+
+      const savedClinic = data.clinic;
+      setClinicOptions((current) =>
+        mergeSavedOption(current, {
+          id: savedClinic.id,
+          name: savedClinic.name,
+          isActive: savedClinic.isActive,
+        }),
+      );
+      updateField("clinicId", savedClinic.id);
+      setIsAddingClinic(false);
+      setNewClinicForm(EMPTY_CLINIC_FORM);
+      setNewClinicFieldErrors({});
+      setNewClinicError(null);
+      setInlineCreatedNotice(
+        `تمت إضافة عيادة "${savedClinic.name}" واختيارها للدكتور.`,
+      );
+      router.refresh();
+    } catch {
+      setNewClinicError(DEFAULT_INLINE_SAVE_ERROR);
+    } finally {
+      setIsSavingClinic(false);
+    }
+  }
+
+  async function handleSaveNewSpecialty() {
+    if (isSavingSpecialty || isSubmitting) {
+      return;
+    }
+
+    setNewSpecialtyFieldErrors({});
+    setNewSpecialtyError(null);
+
+    const parsed = parseCreateSpecialtyInput({
+      name: newSpecialtyForm.name,
+      description: newSpecialtyForm.description.trim()
+        ? newSpecialtyForm.description.trim()
+        : null,
+      isActive: true,
+    });
+
+    if (!parsed.success) {
+      setNewSpecialtyFieldErrors(parsed.fieldErrors);
+      setNewSpecialtyError(parsed.message);
+      return;
+    }
+
+    setIsSavingSpecialty(true);
+    try {
+      const response = await fetch("/api/owner/specialties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
+
+      if (!response.ok) {
+        const errorBody = await parseJsonSafe<OwnerErrorResponse>(response);
+        setNewSpecialtyFieldErrors(errorBody?.fieldErrors ?? {});
+        setNewSpecialtyError(errorBody?.error ?? DEFAULT_INLINE_SAVE_ERROR);
+        return;
+      }
+
+      const data = await parseJsonSafe<{ specialty?: OwnerSpecialty }>(
+        response,
+      );
+      if (!data?.specialty) {
+        setNewSpecialtyError(DEFAULT_INLINE_SAVE_ERROR);
+        return;
+      }
+
+      const savedSpecialty = data.specialty;
+      setSpecialtyOptions((current) =>
+        mergeSavedOption(current, {
+          id: savedSpecialty.id,
+          name: savedSpecialty.name,
+          isActive: savedSpecialty.isActive,
+        }),
+      );
+      updateField("specialtyId", savedSpecialty.id);
+      setIsAddingSpecialty(false);
+      setNewSpecialtyForm(EMPTY_SPECIALTY_FORM);
+      setNewSpecialtyFieldErrors({});
+      setNewSpecialtyError(null);
+      setInlineCreatedNotice(
+        `تمت إضافة تخصص "${savedSpecialty.name}" واختياره للدكتور.`,
+      );
+      router.refresh();
+    } catch {
+      setNewSpecialtyError(DEFAULT_INLINE_SAVE_ERROR);
+    } finally {
+      setIsSavingSpecialty(false);
+    }
+  }
+
   async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isSubmitting || isUploadingPhoto) {
+    if (
+      isSubmitting ||
+      isUploadingPhoto ||
+      isSavingClinic ||
+      isSavingSpecialty
+    ) {
+      return;
+    }
+
+    if (isAddingClinic) {
+      setFormError(
+        "احفظ العيادة الجديدة أو اضغط إلغاء الأول قبل ما تحفظ بيانات الدكتور.",
+      );
+      return;
+    }
+
+    if (isAddingSpecialty) {
+      setFormError(
+        "احفظ التخصص الجديد أو اضغط إلغاء الأول قبل ما تحفظ بيانات الدكتور.",
+      );
       return;
     }
 
@@ -632,7 +952,7 @@ export function OwnerDoctorsManager({
               onChange={(event) => setClinicFilter(event.target.value)}
             >
               <option value="">كل العيادات</option>
-              {options.clinics.map((clinic) => (
+              {clinicOptions.map((clinic) => (
                 <option key={clinic.id} value={clinic.id}>
                   {clinic.isActive
                     ? clinic.name
@@ -650,7 +970,7 @@ export function OwnerDoctorsManager({
               onChange={(event) => setSpecialtyFilter(event.target.value)}
             >
               <option value="">كل التخصصات</option>
-              {options.specialties.map((specialty) => (
+              {specialtyOptions.map((specialty) => (
                 <option key={specialty.id} value={specialty.id}>
                   {specialty.isActive
                     ? specialty.name
@@ -885,16 +1205,16 @@ export function OwnerDoctorsManager({
           <form onSubmit={handleFormSubmit} noValidate className="mt-5 space-y-5">
             {missingDependencies ? (
               <div
-                role="alert"
-                className="flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm leading-6 font-semibold text-destructive"
+                role="status"
+                className="flex items-start gap-2.5 rounded-md border border-border bg-card px-4 py-3 text-sm leading-6 font-semibold text-foreground"
               >
                 <AlertCircle
-                  className="mt-0.5 size-5 shrink-0"
+                  className="mt-0.5 size-5 shrink-0 text-primary"
                   aria-hidden="true"
                 />
                 <p>
-                  لازم يكون فيه عيادة واحدة وتخصص واحد على الأقل قبل ما تضيف
-                  دكتور جديد.
+                  لسه مفيش عيادات أو تخصصات متسجلة — تقدر تضيف عيادة أو تخصص
+                  جديد مباشرة من القوائم تحت من غير ما تقفل النافذة.
                 </p>
               </div>
             ) : null}
@@ -1020,21 +1340,24 @@ export function OwnerDoctorsManager({
               >
                 <Select
                   id={clinicSelectId}
-                  value={formValues.clinicId}
+                  value={isAddingClinic ? ADD_NEW_CLINIC_VALUE : formValues.clinicId}
                   onChange={(event) =>
-                    updateField("clinicId", event.target.value)
+                    handleClinicSelectChange(event.target.value)
                   }
-                  disabled={isSubmitting || options.clinics.length === 0}
+                  disabled={isSubmitting || isSavingClinic}
                   aria-invalid={Boolean(fieldErrors.clinicId)}
                 >
                   <option value="">اختار العيادة</option>
-                  {options.clinics.map((clinic) => (
+                  {clinicOptions.map((clinic) => (
                     <option key={clinic.id} value={clinic.id}>
                       {clinic.isActive
                         ? clinic.name
                         : `${clinic.name} (غير نشطة)`}
                     </option>
                   ))}
+                  <option value={ADD_NEW_CLINIC_VALUE}>
+                    + إضافة عيادة جديدة...
+                  </option>
                 </Select>
               </Field>
 
@@ -1046,24 +1369,326 @@ export function OwnerDoctorsManager({
               >
                 <Select
                   id={specialtySelectId}
-                  value={formValues.specialtyId}
-                  onChange={(event) =>
-                    updateField("specialtyId", event.target.value)
+                  value={
+                    isAddingSpecialty
+                      ? ADD_NEW_SPECIALTY_VALUE
+                      : formValues.specialtyId
                   }
-                  disabled={isSubmitting || options.specialties.length === 0}
+                  onChange={(event) =>
+                    handleSpecialtySelectChange(event.target.value)
+                  }
+                  disabled={isSubmitting || isSavingSpecialty}
                   aria-invalid={Boolean(fieldErrors.specialtyId)}
                 >
                   <option value="">اختار التخصص</option>
-                  {options.specialties.map((specialty) => (
+                  {specialtyOptions.map((specialty) => (
                     <option key={specialty.id} value={specialty.id}>
                       {specialty.isActive
                         ? specialty.name
                         : `${specialty.name} (غير نشط)`}
                     </option>
                   ))}
+                  <option value={ADD_NEW_SPECIALTY_VALUE}>
+                    + إضافة تخصص جديد...
+                  </option>
                 </Select>
               </Field>
             </div>
+
+            {inlineCreatedNotice ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="flex items-start gap-2.5 rounded-md border border-primary/35 bg-card px-4 py-3 text-sm leading-6 font-bold text-foreground"
+              >
+                <Stamp
+                  className="mt-0.5 size-5 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
+                <p>{inlineCreatedNotice}</p>
+              </div>
+            ) : null}
+
+            {isAddingClinic ? (
+              <div
+                role="region"
+                aria-label="إضافة عيادة جديدة"
+                className="space-y-4 rounded-md border border-dashed border-primary/50 bg-background p-4"
+              >
+                <div className="space-y-1">
+                  <p className="text-sm font-extrabold text-foreground">
+                    إضافة عيادة جديدة
+                  </p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    أضف بيانات العيادة الجديدة وهتتختار تلقائياً للدكتور.
+                  </p>
+                </div>
+
+                {newClinicError ? (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm leading-6 font-semibold text-destructive"
+                  >
+                    <AlertCircle
+                      className="mt-0.5 size-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                    <p>{newClinicError}</p>
+                  </div>
+                ) : null}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="اسم العيادة"
+                    htmlFor={newClinicNameId}
+                    required
+                    error={newClinicFieldErrors.name}
+                  >
+                    <Input
+                      id={newClinicNameId}
+                      type="text"
+                      value={newClinicForm.name}
+                      onChange={(event) =>
+                        setNewClinicForm((current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void handleSaveNewClinic();
+                        }
+                      }}
+                      placeholder="مثال: عيادة النيل التخصصية"
+                      maxLength={120}
+                      disabled={isSavingClinic || isSubmitting}
+                      aria-invalid={Boolean(newClinicFieldErrors.name)}
+                    />
+                  </Field>
+
+                  <Field
+                    label="رقم التليفون"
+                    htmlFor={newClinicPhoneId}
+                    required
+                    error={newClinicFieldErrors.phone}
+                  >
+                    <Input
+                      id={newClinicPhoneId}
+                      type="tel"
+                      inputMode="tel"
+                      dir="ltr"
+                      value={newClinicForm.phone}
+                      onChange={(event) =>
+                        setNewClinicForm((current) => ({
+                          ...current,
+                          phone: event.target.value,
+                        }))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void handleSaveNewClinic();
+                        }
+                      }}
+                      placeholder="0453311223"
+                      maxLength={20}
+                      disabled={isSavingClinic || isSubmitting}
+                      aria-invalid={Boolean(newClinicFieldErrors.phone)}
+                      className="text-left"
+                    />
+                  </Field>
+                </div>
+
+                <Field
+                  label="عنوان العيادة"
+                  htmlFor={newClinicAddressId}
+                  required
+                  error={newClinicFieldErrors.address}
+                >
+                  <Input
+                    id={newClinicAddressId}
+                    type="text"
+                    value={newClinicForm.address}
+                    onChange={(event) =>
+                      setNewClinicForm((current) => ({
+                        ...current,
+                        address: event.target.value,
+                      }))
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void handleSaveNewClinic();
+                      }
+                    }}
+                    placeholder="مثال: شارع الجمهورية أمام مجلس المدينة، دمنهور"
+                    maxLength={240}
+                    disabled={isSavingClinic || isSubmitting}
+                    aria-invalid={Boolean(newClinicFieldErrors.address)}
+                  />
+                </Field>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button
+                    type="button"
+                    disabled={isSavingClinic || isSubmitting}
+                    onClick={() => void handleSaveNewClinic()}
+                  >
+                    {isSavingClinic ? (
+                      <>
+                        <Loader2
+                          className="size-4 animate-spin"
+                          aria-hidden="true"
+                        />
+                        بنحفظ العيادة...
+                      </>
+                    ) : (
+                      "حفظ العيادة"
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isSavingClinic || isSubmitting}
+                    onClick={() => {
+                      setIsAddingClinic(false);
+                      setNewClinicFieldErrors({});
+                      setNewClinicError(null);
+                    }}
+                  >
+                    إلغاء
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            {isAddingSpecialty ? (
+              <div
+                role="region"
+                aria-label="إضافة تخصص جديد"
+                className="space-y-4 rounded-md border border-dashed border-primary/50 bg-background p-4"
+              >
+                <div className="space-y-1">
+                  <p className="text-sm font-extrabold text-foreground">
+                    إضافة تخصص جديد
+                  </p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    اكتب اسم التخصص الجديد وهيتختار تلقائياً للدكتور.
+                  </p>
+                </div>
+
+                {newSpecialtyError ? (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm leading-6 font-semibold text-destructive"
+                  >
+                    <AlertCircle
+                      className="mt-0.5 size-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                    <p>{newSpecialtyError}</p>
+                  </div>
+                ) : null}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="اسم التخصص"
+                    htmlFor={newSpecialtyNameId}
+                    required
+                    error={newSpecialtyFieldErrors.name}
+                  >
+                    <Input
+                      id={newSpecialtyNameId}
+                      type="text"
+                      value={newSpecialtyForm.name}
+                      onChange={(event) =>
+                        setNewSpecialtyForm((current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void handleSaveNewSpecialty();
+                        }
+                      }}
+                      placeholder="مثال: قلب وأوعية دموية"
+                      maxLength={100}
+                      disabled={isSavingSpecialty || isSubmitting}
+                      aria-invalid={Boolean(newSpecialtyFieldErrors.name)}
+                    />
+                  </Field>
+
+                  <Field
+                    label="وصف التخصص (اختياري)"
+                    htmlFor={newSpecialtyDescriptionId}
+                    error={newSpecialtyFieldErrors.description}
+                  >
+                    <Input
+                      id={newSpecialtyDescriptionId}
+                      type="text"
+                      value={newSpecialtyForm.description}
+                      onChange={(event) =>
+                        setNewSpecialtyForm((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void handleSaveNewSpecialty();
+                        }
+                      }}
+                      placeholder="وصف مختصر يظهر للمرضى"
+                      maxLength={400}
+                      disabled={isSavingSpecialty || isSubmitting}
+                      aria-invalid={Boolean(
+                        newSpecialtyFieldErrors.description,
+                      )}
+                    />
+                  </Field>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Button
+                    type="button"
+                    disabled={isSavingSpecialty || isSubmitting}
+                    onClick={() => void handleSaveNewSpecialty()}
+                  >
+                    {isSavingSpecialty ? (
+                      <>
+                        <Loader2
+                          className="size-4 animate-spin"
+                          aria-hidden="true"
+                        />
+                        بنحفظ التخصص...
+                      </>
+                    ) : (
+                      "حفظ التخصص"
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isSavingSpecialty || isSubmitting}
+                    onClick={() => {
+                      setIsAddingSpecialty(false);
+                      setNewSpecialtyFieldErrors({});
+                      setNewSpecialtyError(null);
+                    }}
+                  >
+                    إلغاء
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-4 sm:grid-cols-3">
               <Field
@@ -1221,7 +1846,13 @@ export function OwnerDoctorsManager({
             <DialogFooter>
               <Button
                 type="submit"
-                disabled={isSubmitting || isUploadingPhoto || missingDependencies}
+                disabled={
+                  isSubmitting ||
+                  isUploadingPhoto ||
+                  isSavingClinic ||
+                  isSavingSpecialty ||
+                  missingDependencies
+                }
               >
                 {isSubmitting ? (
                   <>
@@ -1242,7 +1873,12 @@ export function OwnerDoctorsManager({
                 type="button"
                 variant="outline"
                 onClick={() => handleDialogOpenChange(false)}
-                disabled={isSubmitting || isUploadingPhoto}
+                disabled={
+                  isSubmitting ||
+                  isUploadingPhoto ||
+                  isSavingClinic ||
+                  isSavingSpecialty
+                }
               >
                 إلغاء
               </Button>

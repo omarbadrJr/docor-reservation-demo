@@ -1,6 +1,7 @@
 import {
   Building2,
   CalendarDays,
+  HeartPulse,
   Stethoscope,
   UserCog,
   Users,
@@ -19,6 +20,7 @@ const navItems: DashboardNavItem[] = [
   { href: "/owner", label: "نظرة عامة", icon: CalendarDays, exact: true },
   { href: "/owner/appointments", label: "الحجوزات", icon: Users },
   { href: "/owner/clinics", label: "العيادات", icon: Building2 },
+  { href: "/owner/specialties", label: "التخصصات", icon: HeartPulse },
   { href: "/owner/doctors", label: "الدكاترة", icon: Stethoscope },
   { href: "/owner/receptionists", label: "موظفي الاستقبال", icon: UserCog },
 ];

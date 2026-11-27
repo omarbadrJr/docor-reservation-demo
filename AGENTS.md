@@ -64,7 +64,7 @@ Follow `docs/PROJECT_STRUCTURE.md` incrementally — create folders and files on
 - **Usability:** Mobile-first, uncluttered, large readable text, large touch-friendly buttons, minimal steps, accessible contrast, never rely on color alone to convey status, and clear loading/empty/success/error states. Do not invent extra booking steps or unnecessary dialogs.
 
 ## 7. Implementation & Verification Workflow
-- Follow the phase-by-phase plan in `IMPLEMENTATION-PLAN.md` (aligned with `SRS.md` §11), checking its Phase Tracker for current progress (Phases 1–11 completed; Phase 12 remaining) and verifying each phase's acceptance criteria plus all 10 acceptance criteria in `SRS.md` §10 before advancing.
+- Follow the phase-by-phase plan in `IMPLEMENTATION-PLAN.md` (aligned with `SRS.md` §11), checking its Phase Tracker for current progress (All Phases 1–12 completed) and verifying each phase's acceptance criteria plus all 10 acceptance criteria in `SRS.md` §10 before advancing.
 - Keep all seed/demo records clearly marked as fictional (`SRS.md` §12).
 - Keep edits focused and minimal; avoid touching unrelated files.
 - **Branching workflow:** Use feature/fix branches (`feat/...`, `fix/...`) merged into `dev` via PR, and merge `dev` into `main` via PR (unless the user explicitly asks to push directly to `dev`).

@@ -186,6 +186,65 @@ describe("generateSlots", () => {
     );
   });
 
+  it("excludes a slot at exact equality (now.time === start) while keeping it one minute earlier", () => {
+    const windows = [{ start: "09:00", end: "10:00" }];
+
+    assert.deepEqual(
+      generateSlots(windows, 30, "2026-11-01", {
+        date: "2026-11-01",
+        time: "08:59",
+      }),
+      [
+        { start: "09:00", end: "09:30" },
+        { start: "09:30", end: "10:00" },
+      ],
+    );
+    assert.deepEqual(
+      generateSlots(windows, 30, "2026-11-01", {
+        date: "2026-11-01",
+        time: "09:00",
+      }),
+      [{ start: "09:30", end: "10:00" }],
+    );
+  });
+
+  it("handles late evening slots across Cairo midnight rollover", () => {
+    const windows = [{ start: "23:30", end: "23:59" }];
+
+    assert.deepEqual(
+      generateSlots(windows, 29, "2026-11-01", {
+        date: "2026-11-01",
+        time: "23:29",
+      }),
+      [{ start: "23:30", end: "23:59" }],
+    );
+    assert.deepEqual(
+      generateSlots(windows, 29, "2026-11-01", {
+        date: "2026-11-01",
+        time: "23:30",
+      }),
+      [],
+    );
+    assert.deepEqual(
+      generateSlots(windows, 29, "2026-11-01", {
+        date: "2026-11-02",
+        time: "00:00",
+      }),
+      [],
+    );
+  });
+
+  it("classifies a working day whose slots have all passed today as FULL (not OFF)", () => {
+    const windows = [{ start: "09:00", end: "10:00" }];
+    const slots = generateSlots(windows, 30, "2026-11-01", {
+      date: "2026-11-01",
+      time: "09:30",
+    });
+
+    assert.deepEqual(slots, []);
+    assert.equal(classifyAvailability(windows, slots), "FULL");
+  });
+
   it("returns no slots for an invalid duration", () => {
     assert.deepEqual(
       generateSlots(

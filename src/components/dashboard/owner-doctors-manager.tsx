@@ -1011,7 +1011,7 @@ export function OwnerDoctorsManager({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="default"
                 onClick={clearFilters}
               >
                 <RotateCcw className="size-4" aria-hidden="true" />

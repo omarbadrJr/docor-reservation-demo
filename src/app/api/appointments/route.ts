@@ -6,6 +6,8 @@ import type {
   CreateAppointmentResponse,
 } from "@/types/booking";
 
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" } as const;
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -16,7 +18,7 @@ export async function POST(request: Request) {
         error: "بيانات الحجز مش مظبوطة، راجعها وحاول تاني.",
         code: "VALIDATION_ERROR",
       } satisfies CreateAppointmentErrorResponse,
-      { status: 400 },
+      { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -28,7 +30,7 @@ export async function POST(request: Request) {
         code: "VALIDATION_ERROR",
         fieldErrors: parsed.fieldErrors,
       } satisfies CreateAppointmentErrorResponse,
-      { status: 400 },
+      { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
     const booking = await createAppointment(createAdminClient(), parsed.data);
     return Response.json(
       { booking } satisfies CreateAppointmentResponse,
-      { status: 201 },
+      { status: 201, headers: NO_STORE_HEADERS },
     );
   } catch (error) {
     if (error instanceof BookingServiceError) {
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
           ...(error.fieldErrors ? { fieldErrors: error.fieldErrors } : {}),
           ...(error.availability ? { availability: error.availability } : {}),
         } satisfies CreateAppointmentErrorResponse,
-        { status: error.status },
+        { status: error.status, headers: NO_STORE_HEADERS },
       );
     }
 
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
         error: "حصلت مشكلة وإحنا بنسجل الحجز، حاول تاني بعد شوية.",
         code: "INTERNAL_ERROR",
       } satisfies CreateAppointmentErrorResponse,
-      { status: 500 },
+      { status: 500, headers: NO_STORE_HEADERS },
     );
   }
 }

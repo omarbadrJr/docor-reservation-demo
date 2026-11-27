@@ -27,7 +27,7 @@ function PatientShell({ children }: { children: React.ReactNode }) {
               <span className="font-heading text-lg font-extrabold">
                 حجز دكتور
               </span>
-              <span className="mt-1 text-[0.7rem] font-medium text-background/70">
+              <span className="mt-1 text-xs font-medium text-background/70">
                 عيادات البحيرة
               </span>
             </span>

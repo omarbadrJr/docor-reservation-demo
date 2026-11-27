@@ -61,7 +61,10 @@ describe("RescheduleBookingPanel", () => {
     );
 
     assert.match(html, /رجوع لتفاصيل الحجز/);
-    assert.match(html, /تغيير معاد الحجز \(DR-8K29P4\)/);
+    assert.match(
+      html,
+      /تغيير معاد الحجز[\s\S]*dir="ltr"[^>]*>DR-8K29P4<\/span>/,
+    );
     assert.match(html, /د\. أحمد مصطفى/);
     assert.match(html, /معادك الحالي/);
     assert.match(html, /الخميس، 3 ديسمبر 2026/);

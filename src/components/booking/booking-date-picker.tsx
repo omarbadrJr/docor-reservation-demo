@@ -148,7 +148,7 @@ export function BookingDatePicker({
                     <span className="text-sm font-extrabold sm:text-base">
                       {dayNumber}
                     </span>
-                    <span className="text-[11px] font-bold">فات</span>
+                    <span className="text-xs font-bold">فات</span>
                   </button>
                 );
               }
@@ -174,7 +174,7 @@ export function BookingDatePicker({
                     </span>
                     <span
                       className={cn(
-                        "text-[11px] font-bold",
+                        "text-xs font-bold",
                         isSelected ? "text-primary-foreground" : "text-primary",
                       )}
                     >
@@ -196,7 +196,7 @@ export function BookingDatePicker({
                     <span className="text-sm font-extrabold sm:text-base">
                       {dayNumber}
                     </span>
-                    <span className="text-[11px] font-bold">مكتمل</span>
+                    <span className="text-xs font-bold">مكتمل</span>
                   </button>
                 );
               }
@@ -212,7 +212,7 @@ export function BookingDatePicker({
                   <span className="text-sm font-extrabold sm:text-base">
                     {dayNumber}
                   </span>
-                  <span className="text-[11px] font-bold">مقفول</span>
+                  <span className="text-xs font-bold">مقفول</span>
                 </button>
               );
             })}

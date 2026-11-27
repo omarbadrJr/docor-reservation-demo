@@ -17,6 +17,54 @@ describe("getCairoNow", () => {
       time: "00:30",
     });
   });
+
+  it("handles winter UTC+2 midnight rollover with 00:00 (never 24:00)", () => {
+    assert.deepEqual(getCairoNow(new Date("2026-01-15T21:59:59Z")), {
+      date: "2026-01-15",
+      time: "23:59",
+    });
+    const midnight = getCairoNow(new Date("2026-01-15T22:00:00Z"));
+    assert.deepEqual(midnight, {
+      date: "2026-01-16",
+      time: "00:00",
+    });
+    assert.notEqual(midnight.time, "24:00");
+  });
+
+  it("handles summer DST UTC+3 midnight rollover with 00:00 (never 24:00)", () => {
+    assert.deepEqual(getCairoNow(new Date("2026-07-15T20:59:59Z")), {
+      date: "2026-07-15",
+      time: "23:59",
+    });
+    const midnight = getCairoNow(new Date("2026-07-15T21:00:00Z"));
+    assert.deepEqual(midnight, {
+      date: "2026-07-16",
+      time: "00:00",
+    });
+    assert.notEqual(midnight.time, "24:00");
+  });
+
+  it("handles Egypt DST spring-forward transition in April (00:00 jumps to 01:00)", () => {
+    assert.deepEqual(getCairoNow(new Date("2026-04-23T21:59:00Z")), {
+      date: "2026-04-23",
+      time: "23:59",
+    });
+    assert.deepEqual(getCairoNow(new Date("2026-04-23T22:00:00Z")), {
+      date: "2026-04-24",
+      time: "01:00",
+    });
+  });
+
+  it("handles Egypt DST fall-back transition in October (24:00 EEST reverts to 23:00 EET)", () => {
+    assert.deepEqual(getCairoNow(new Date("2026-10-29T20:59:00Z")), {
+      date: "2026-10-29",
+      time: "23:59",
+    });
+    assert.deepEqual(getCairoNow(new Date("2026-10-29T21:00:00Z")), {
+      date: "2026-10-29",
+      time: "23:00",
+    });
+  });
 });
 
 describe("listDatesInMonth", () => {

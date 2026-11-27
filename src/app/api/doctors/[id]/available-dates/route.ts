@@ -3,18 +3,26 @@ import { parseMonth } from "@/lib/validations/availability";
 import { parseCatalogId } from "@/lib/validations/catalog";
 import { listDoctorAvailableDates } from "@/services/availability";
 
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" } as const;
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   if (!parseCatalogId(id)) {
-    return Response.json({ error: "رقم الدكتور غير صحيح." }, { status: 400 });
+    return Response.json(
+      { error: "رقم الدكتور غير صحيح." },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
   }
 
   const month = parseMonth(new URL(request.url).searchParams.get("month"));
   if (!month) {
-    return Response.json({ error: "الشهر غير صحيح." }, { status: 400 });
+    return Response.json(
+      { error: "الشهر غير صحيح." },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
   }
 
   try {
@@ -23,16 +31,16 @@ export async function GET(
     if (!dates) {
       return Response.json(
         { error: "الدكتور ده غير متاح دلوقتي." },
-        { status: 404 },
+        { status: 404, headers: NO_STORE_HEADERS },
       );
     }
 
-    return Response.json({ dates });
+    return Response.json({ dates }, { headers: NO_STORE_HEADERS });
   } catch (error) {
     console.error("Failed to load available dates", error);
     return Response.json(
       { error: "مش قادرين نجيب المواعيد دلوقتي، حاول تاني بعد شوية." },
-      { status: 500 },
+      { status: 500, headers: NO_STORE_HEADERS },
     );
   }
 }

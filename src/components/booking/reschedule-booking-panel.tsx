@@ -372,7 +372,11 @@ export function RescheduleBookingPanel({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-bold text-primary">
-              تغيير معاد الحجز ({booking.referenceNumber})
+              تغيير معاد الحجز (
+              <span dir="ltr" className="inline-block font-mono">
+                {booking.referenceNumber}
+              </span>
+              )
             </p>
             <h2 className="mt-1 font-heading text-xl font-extrabold sm:text-2xl">
               {booking.doctorName}

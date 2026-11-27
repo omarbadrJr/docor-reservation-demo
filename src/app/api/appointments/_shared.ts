@@ -17,6 +17,7 @@ import type {
 } from "@/types/booking";
 
 const INVALID_JSON_ERROR = "البيانات مش مظبوطة، راجعها وحاول تاني.";
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" } as const;
 
 function toErrorResponse(
   error: unknown,
@@ -31,7 +32,7 @@ function toErrorResponse(
         ...(error.fieldErrors ? { fieldErrors: error.fieldErrors } : {}),
         ...(error.availability ? { availability: error.availability } : {}),
       } satisfies BookingManagementErrorResponse,
-      { status: error.status },
+      { status: error.status, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -41,7 +42,7 @@ function toErrorResponse(
       error: fallbackMessage,
       code: "INTERNAL_ERROR",
     } satisfies BookingManagementErrorResponse,
-    { status: 500 },
+    { status: 500, headers: NO_STORE_HEADERS },
   );
 }
 
@@ -58,7 +59,7 @@ async function readJsonBody(
           error: INVALID_JSON_ERROR,
           code: "VALIDATION_ERROR",
         } satisfies BookingManagementErrorResponse,
-        { status: 400 },
+        { status: 400, headers: NO_STORE_HEADERS },
       ),
     };
   }
@@ -76,7 +77,7 @@ export async function handleLookupGet(
         code: "VALIDATION_ERROR",
         fieldErrors: parsed.fieldErrors,
       } satisfies BookingManagementErrorResponse,
-      { status: 400 },
+      { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -84,6 +85,7 @@ export async function handleLookupGet(
     const result = await lookupAppointments(getClient(), parsed.data);
     return Response.json(result satisfies LookupAppointmentsResponse, {
       status: 200,
+      headers: NO_STORE_HEADERS,
     });
   } catch (error) {
     return toErrorResponse(
@@ -112,7 +114,7 @@ export async function handleReschedulePatch(
         code: "VALIDATION_ERROR",
         fieldErrors: parsed.fieldErrors,
       } satisfies BookingManagementErrorResponse,
-      { status: 400 },
+      { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -120,6 +122,7 @@ export async function handleReschedulePatch(
     const result = await rescheduleAppointment(getClient(), parsed.data);
     return Response.json(result satisfies UpdateAppointmentResponse, {
       status: 200,
+      headers: NO_STORE_HEADERS,
     });
   } catch (error) {
     return toErrorResponse(
@@ -148,7 +151,7 @@ export async function handleCancelPatch(
         code: "VALIDATION_ERROR",
         fieldErrors: parsed.fieldErrors,
       } satisfies BookingManagementErrorResponse,
-      { status: 400 },
+      { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
@@ -156,6 +159,7 @@ export async function handleCancelPatch(
     const result = await cancelAppointment(getClient(), parsed.data);
     return Response.json(result satisfies UpdateAppointmentResponse, {
       status: 200,
+      headers: NO_STORE_HEADERS,
     });
   } catch (error) {
     return toErrorResponse(

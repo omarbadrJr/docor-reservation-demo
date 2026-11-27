@@ -98,7 +98,7 @@ function DashboardShell({
             <div className="flex items-center gap-3">
               <div className="text-left">
                 <p className="text-sm font-bold">{userLabel}</p>
-                <p className="text-[0.7rem] text-background/70">{roleLabel}</p>
+                <p className="text-xs text-background/70">{roleLabel}</p>
               </div>
               {headerLogoutSlot ? (
                 <div className="shrink-0">{headerLogoutSlot}</div>

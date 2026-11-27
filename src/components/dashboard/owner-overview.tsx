@@ -250,7 +250,7 @@ export function OwnerOverview({
           </div>
           <Link
             href="/owner/appointments"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
+            className={buttonVariants({ variant: "outline", size: "default" })}
           >
             عرض كل الحجوزات
           </Link>
@@ -293,7 +293,7 @@ export function OwnerOverview({
           </div>
           <Link
             href="/owner/appointments"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
+            className={buttonVariants({ variant: "outline", size: "default" })}
           >
             عرض كل الحجوزات
           </Link>
